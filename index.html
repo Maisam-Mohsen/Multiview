@@ -1,205 +1,28 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json">
-    <title>Multiview Player</title>
-    
-    <style>
-        body { margin: 0; background: #000; font-family: Tahoma, sans-serif; overflow-x: hidden; padding-bottom: 20px; }
-        
-        .header-text {
-            color: #ffffff;
-            text-align: center;
-            direction: rtl;
-            padding: 10px 10px 0 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
+// Maisam TV
+// ==UserScript==
+// @name         Maisam TV
+// @namespace    local.multiview.tweaks
+// @version      1.1
+// @description  Maisam TV: forces every YouTube embed on multiview.no to autoplay, loop, play at 0.25x, and use Auto quality.
+// @match        https://multiview.no/*
+// @match        https://*.multiview.no/*
+// @run-at       document-idle
+// @grant        none
+// ==/UserScript==
 
-        /* پنل کنترل */
-        #controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            padding: 10px;
-            background: #1a1a1a;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
+(function () {
+  'use strict';
 
-        .control-btn {
-            background: #333;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-family: Tahoma;
-            font-size: 13px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+  const SPEED = 0.25;     // playback speed
+  const QUALITY = 'auto'; // quality
+  const LOOP = true;      // loop on
+  const AUTOPLAY = true;  // autoplay on
+  const MUTE_FOR_AUTOPLAY = false; // set true if the browser blocks autoplay with sound
+  const TITLE = 'Maisam TV';
+  const INTERVAL_MS = 2500; // how often settings are re-applied
 
-        .control-btn.active {
-            background: #ff0000;
-            border-color: #ff0000;
-        }
+  const isYT = (src) => /youtube(-nocookie)?\.com\/embed\//.test(src || '');
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            padding: 10px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        @media (min-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); max-width: 1600px; } }
-
-        /* حالت دسکتاپ اجباری */
-        body.force-desktop .grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-            max-width: 1600px;
-        }
-        
-        .video-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background: #111;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .video-container iframe {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%; border: 0;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="header-text">
-        شبکه‌های پخش زنده
-    </div>
-
-    <!-- پنل کنترل تنظیمات -->
-    <div id="controls">
-        <button class="control-btn active" id="btn-mute" onclick="toggleMute()">🔇 قطع صدا</button>
-        <button class="control-btn" id="btn-speed" onclick="toggleSpeed()">⚡ سرعت: 0.25x</button>
-        <button class="control-btn" id="btn-desktop" onclick="toggleDesktop()">💻 حالت دسکتاپ</button>
-    </div>
-
-    <div class="grid" id="video-grid">
-        <div class="video-container" data-video-id="aLBmwItG1O0"></div>
-        <div class="video-container" data-video-id="OI-i0uqjQi4"></div>
-        <div class="video-container" data-video-id="lwOQn36TeiA"></div>
-        <div class="video-container" data-video-id="A0fVc5kOmCs"></div>
-        <div class="video-container" data-video-id="f11BI1x6ezg"></div>
-        <div class="video-container" data-video-id="0hYlbJFgpGE"></div>
-    </div>
-
-    <script>
-        var isMuted = true; 
-        var currentSpeed = 0.25;
-        var isDesktopForced = false;
-
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-        var players = [];
-
-        function onYouTubeIframeAPIReady() {
-            var containers = document.querySelectorAll('.video-container');
-            
-            containers.forEach(function(container) {
-                var videoId = container.getAttribute('data-video-id');
-                var playerDiv = document.createElement('div');
-                container.appendChild(playerDiv);
-
-                var player = new YT.Player(playerDiv, {
-                    videoId: videoId,
-                    playerVars: {
-                        'playsinline': 1,
-                        'loop': 1, 
-                        'playlist': videoId, 
-                        'autoplay': 1, // دستور پخش خودکار
-                        'mute': 1,     // الزامی برای پخش خودکار (بدون صدا)
-                        'rel': 0
-                    },
-                    events: {
-                        'onReady': function(event) {
-                            var p = event.target;
-                            p.setPlaybackRate(currentSpeed);
-                            if (typeof p.setPlaybackQuality === 'function') {
-                                p.setPlaybackQuality('small');
-                            }
-                            p.mute();
-                            p.playVideo(); // تلاش دوباره برای پخش
-                        }
-                    }
-                });
-                players.push(player);
-            });
-        }
-
-        // تابع قطع/وصل صدا
-        function toggleMute() {
-            isMuted = !isMuted;
-            var btn = document.getElementById('btn-mute');
-            
-            if (isMuted) {
-                btn.innerHTML = '🔇 قطع صدا';
-                btn.classList.add('active');
-                players.forEach(function(p) { if(p && p.mute) p.mute(); });
-            } else {
-                btn.innerHTML = '🔊 وصل صدا';
-                btn.classList.remove('active');
-                players.forEach(function(p) { 
-                    if(p && p.unMute) p.unMute(); 
-                });
-            }
-        }
-
-        // تابع تغییر سرعت
-        function toggleSpeed() {
-            currentSpeed = currentSpeed === 0.25 ? 1.0 : 0.25;
-            var btn = document.getElementById('btn-speed');
-            btn.innerHTML = '⚡ سرعت: ' + currentSpeed + 'x';
-            players.forEach(function(p) { 
-                if(p && p.setPlaybackRate) p.setPlaybackRate(currentSpeed); 
-            });
-        }
-
-        // تابع تغییر به حالت دسکتاپ
-        function toggleDesktop() {
-            isDesktopForced = !isDesktopForced;
-            var btn = document.getElementById('btn-desktop');
-            if (isDesktopForced) {
-                document.body.classList.add('force-desktop');
-                btn.classList.add('active');
-            } else {
-                document.body.classList.remove('force-desktop');
-                btn.classList.remove('active');
-            }
-        }
-
-        // ادامه پخش در پس زمینه
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible') {
-                players.forEach(function(p) { if (p && p.playVideo) p.playVideo(); });
-            }
-        });
-    </script>
-</body>
-</html>
+  function videoId(src) {
+    try {
+      const m = new URL(src).pathname.match(/\/embed\/([^/?]+)/);
