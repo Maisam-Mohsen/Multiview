@@ -17,11 +17,11 @@
   const QUALITY = 'auto'; // quality
   const LOOP = true;      // loop on
   const AUTOPLAY = true;  // autoplay on
-  const START_MUTED = true; // browsers only allow autoplay when muted; the first click unmutes everything
+  const START_MUTED = false; // false = never mute; true = start muted until first click
   const TITLE = 'Maisam TV';
   const TITLE_FA = 'شبکه تلویزیونی میثم محسنی';
-  let unmuted = false;
+  let unmuted = !START_MUTED;
+  let gestureDone = false;
   const INTERVAL_MS = 2500; // how often settings are re-applied
 
   const isYT = (src) => /youtube(-nocookie)?\.com\/embed\//.test(src || '');
-  
