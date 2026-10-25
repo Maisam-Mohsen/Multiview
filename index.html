@@ -1,146 +1,32 @@
-// ==UserScript==
-// @name         Maisam TV
-// @namespace    local.multiview.tweaks
-// @version      1.1
-// @description  Maisam TV: forces every YouTube embed on multiview.no to autoplay, loop, play at 0.25x, and use Auto quality.
-// @match        https://multiview.no/*
-// @match        https://*.multiview.no/*
-// @run-at       document-idle
-// @grant        none
-// ==/UserScript==
-(function () {
-  'use strict';
-  const SPEED = 0.25;
-  const QUALITY = 'auto';
-  const LOOP = true;
-  const AUTOPLAY = true;
-  const START_MUTED = false;
-  const TITLE = 'Maisam TV';
-  const TITLE_FA = 'شبکه تلویزیونی میثم محسنی';
-  let unmuted = !START_MUTED;
-  let gestureDone = false;
-  const INTERVAL_MS = 2500;
-  const isYT = (src) => /youtube(-nocookie)?\.com\/embed\//.test(src || '');
-  function videoId(src) {
-    try {
-      const m = new URL(src).pathname.match(/\/embed\/([^/?]+)/);
-      return m ? m[1] : null;
-    } catch (e) { return null; }
-  }
-  function prepare(iframe) {
-    const src = iframe.src;
-    if (!isYT(src)) return;
-    const id = videoId(src);
-    if (!id) return;
-    const u = new URL(src);
-    const ok =
-      u.searchParams.get('enablejsapi') === '1' &&
-      u.searchParams.get('loop') === '1' &&
-      u.searchParams.get('autoplay') === (AUTOPLAY ? '1' : '0') &&
-      u.searchParams.get('playlist') === id;
-    const needAllow = !/autoplay/.test(iframe.allow || '');
-    if (ok && !needAllow) return;
-    if (needAllow) {
-      iframe.allow = (iframe.allow ? iframe.allow + '; ' : '') + 'autoplay; encrypted-media';
-    }
-    u.searchParams.set('autoplay', AUTOPLAY ? '1' : '0');
-    u.searchParams.set('enablejsapi', '1');
-    u.searchParams.set('loop', '1');
-    u.searchParams.set('playlist', id);
-    u.searchParams.set('origin', location.origin);
-    iframe.src = u.toString();
-  }
-  function send(iframe, func, args) {
-    try {
-      iframe.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func, args: args || [] }), '*'
-      );
-    } catch (e) { /* iframe not ready yet */ }
-  }
-  function apply(iframe) {
-    if (!isYT(iframe.src)) return;
-    try {
-      iframe.contentWindow.postMessage(
-        JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'
-      );
-    } catch (e) { return; }
-    if (LOOP) send(iframe, 'setLoop', [true]);
-    send(iframe, 'setPlaybackRate', [SPEED]);
-    send(iframe, 'setPlaybackQuality', [QUALITY]);
-    if (AUTOPLAY) {
-      if (START_MUTED && !unmuted) send(iframe, 'mute');
-      if (!iframe.dataset.mtvStarted) {
-        iframe.dataset.mtvStarted = '1';
-        send(iframe, 'playVideo');
-      }
-    }
-  }
-  function unmuteAll() {
-    unmuted = true;
-    document.querySelectorAll('iframe').forEach((f) => {
-      if (!isYT(f.src)) return;
-      send(f, 'unMute');
-      send(f, 'setVolume', [100]);
-      send(f, 'playVideo');
-    });
-    const hint = document.getElementById('maisam-tv-hint');
-    if (hint) hint.remove();
-  }
-  function onGesture() {
-    if (gestureDone) return;
-    gestureDone = true;
-    unmuteAll();
-  }
-  ['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
-    window.addEventListener(ev, onGesture, { capture: true })
-  );
-  window.addEventListener('blur', () => {
-    setTimeout(() => {
-      const a = document.activeElement;
-      if (a && a.tagName === 'IFRAME') onGesture();
-    }, 0);
-  });
-  function banner() {
-    document.title = TITLE + ' | ' + TITLE_FA;
-    if (document.getElementById('maisam-tv-banner')) return;
-    const b = document.createElement('div');
-    b.id = 'maisam-tv-banner';
-    b.textContent = TITLE + '  ·  ' + TITLE_FA;
-    if (START_MUTED && !unmuted) {
-      const h = document.createElement('span');
-      h.id = 'maisam-tv-hint';
-      h.textContent = '   🔇 click anywhere to unmute';
-      h.style.cssText = 'font-weight:400;font-size:12px;opacity:.8;';
-      b.appendChild(h);
-    }
-    const btn = document.createElement('button');
-    btn.textContent = '🔊 Unmute all';
-    btn.style.cssText =
-      'margin-inline-start:14px;padding:2px 10px;font:600 12px system-ui,sans-serif;' +
-      'border:1px solid #1a1200;border-radius:6px;background:#fff8e1;color:#1a1200;' +
-      'cursor:pointer;pointer-events:auto;';
-    btn.addEventListener('click', (e) => { e.stopPropagation(); unmuteAll(); });
-    b.appendChild(btn);
-    b.style.cssText =
-      'position:fixed;top:0;left:0;right:0;height:28px;line-height:28px;' +
-      'text-align:center;font:700 15px system-ui,sans-serif;letter-spacing:.08em;' +
-      'color:#1a1200;background:oklch(0.78 0.18 75);z-index:2147483647;' +
-      'pointer-events:none;';
-    document.body.appendChild(b);
-    document.documentElement.style.scrollPaddingTop = '28px';
-    document.body.style.marginTop = '28px';
-  }
-  function scan() {
-    document.querySelectorAll('iframe').forEach((f) => {
-      prepare(f);
-      apply(f);
-    });
-  }
-  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
-  document.addEventListener('load', (e) => {
-    if (e.target && e.target.tagName === 'IFRAME') setTimeout(scan, 800);
-  }, true);
-  setInterval(() => { banner(); scan(); }, INTERVAL_MS);
-  banner();
-  scan();
-})();
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="utf-8">
+  <title>Maisam TV | شبکه تلویزیونی میثم محسنی</title>
+  <style>
+    body { margin: 28px 0 0; background:#111; display:grid; gap:8px;
+           grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); padding:8px; }
+    iframe { width:100%; aspect-ratio:16/9; border:0; background:#000; }
+  </style>
+</head>
+<body>
+  <!-- اگر iframeها را خودت مینویسی، اینجا قرار بده -->
+  <iframe
+    src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&enablejsapi=1&loop=1&playlist=VIDEO_ID&mute=1"
+    allow="autoplay; encrypted-media; fullscreen"
+    title="Maisam TV"></iframe>
+  <iframe
+    src="https://www.youtube.com/embed/VIDEO_ID2?autoplay=1&enablejsapi=1&loop=1&playlist=VIDEO_ID2&mute=1"
+    allow="autoplay; encrypted-media; fullscreen"
+    title="Maisam TV"></iframe>
+
+  <script>
+    // همان کد UserScript را بدون هدر // ==UserScript== اینجا بگذار
+    (function () {
+      'use strict';
+      const SPEED = 0.25;
+      // ... بقیهی کد دقیقاً مثل قبل ...
+    })();
+  </script>
+</body>
+</html>
