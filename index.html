@@ -8,15 +8,48 @@
     <title>Multiview Player</title>
     
     <style>
-        body { margin: 0; background: #000; font-family: Tahoma, sans-serif; overflow-x: hidden; }
+        body { margin: 0; background: #000; font-family: Tahoma, sans-serif; overflow-x: hidden; padding-bottom: 20px; }
         
         .header-text {
             color: #ffffff;
             text-align: center;
             direction: rtl;
-            padding: 15px 10px;
-            font-size: 20px;
+            padding: 10px 10px 0 10px;
+            font-size: 18px;
             font-weight: bold;
+        }
+
+        /* پنل کنترل */
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .control-btn {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-family: Tahoma;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-btn.active {
+            background: #ff0000;
+            border-color: #ff0000;
         }
 
         .grid {
@@ -31,6 +64,12 @@
         
         @media (min-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); max-width: 1600px; } }
+
+        /* حالت دسکتاپ اجباری */
+        body.force-desktop .grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            max-width: 1600px;
+        }
         
         .video-container {
             position: relative;
@@ -43,55 +82,20 @@
         .video-container iframe {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%; border: 0;
-            pointer-events: none; /* جلوگیری از کلیک مستقیم که باعث باز شدن اپ یوتیوب می‌شود */
-        }
-
-        /* استایل دکمه شروع */
-        #start-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            flex-direction: column;
-        }
-        
-        #start-btn {
-            background-color: #ff0000; /* رنگ قرمز یوتیوب */
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            font-family: Tahoma, sans-serif;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.4);
-            transition: transform 0.2s;
-        }
-        
-        #start-btn:active { transform: scale(0.95); }
-        
-        .hint-text {
-            color: #aaa;
-            margin-top: 15px;
-            font-size: 14px;
-            direction: rtl;
         }
     </style>
 </head>
 <body>
 
-    <!-- صفحه سیاه اولیه برای گرفتن کلیک کاربر -->
-    <div id="start-overlay">
-        <button id="start-btn">▶ شروع پخش ویدیوها</button>
-        <div class="hint-text">برای جلوگیری از باز شدن اپ یوتیوب، اینجا کلیک کنید</div>
-    </div>
-
     <div class="header-text">
         شبکه‌های پخش زنده
+    </div>
+
+    <!-- پنل کنترل تنظیمات -->
+    <div id="controls">
+        <button class="control-btn active" id="btn-mute" onclick="toggleMute()">🔇 قطع صدا</button>
+        <button class="control-btn" id="btn-speed" onclick="toggleSpeed()">⚡ سرعت: 0.25x</button>
+        <button class="control-btn" id="btn-desktop" onclick="toggleDesktop()">💻 حالت دسکتاپ</button>
     </div>
 
     <div class="grid" id="video-grid">
@@ -104,20 +108,9 @@
     </div>
 
     <script>
-        var globalConfig = {
-            speed: 0.25,
-            loop: true,
-            quality: 'small' 
-        };
-
-        var videoMuteSettings = {
-            'aLBmwItG1O0': true,
-            'OI-i0uqjQi4': true,
-            'lwOQn36TeiA': true,
-            'A0fVc5kOmCs': true,
-            'f11BI1x6ezg': false, // فقط این ویدیو صدا دارد
-            '0hYlbJFgpGE': true
-        };
+        var isMuted = true; 
+        var currentSpeed = 0.25;
+        var isDesktopForced = false;
 
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -125,7 +118,6 @@
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         var players = [];
-        var isStarted = false;
 
         function onYouTubeIframeAPIReady() {
             var containers = document.querySelectorAll('.video-container');
@@ -135,32 +127,25 @@
                 var playerDiv = document.createElement('div');
                 container.appendChild(playerDiv);
 
-                var shouldMute = videoMuteSettings[videoId] !== false;
-
                 var player = new YT.Player(playerDiv, {
                     videoId: videoId,
                     playerVars: {
                         'playsinline': 1,
-                        'loop': globalConfig.loop ? 1 : 0,
-                        'playlist': videoId,
-                        'autoplay': 0, // فعلاً 0 است تا بعد از کلیک کاربر پخش شود
-                        'mute': shouldMute ? 1 : 0,
-                        'rel': 0, // جلوگیری از نمایش ویدیوهای پیشنهادی در انتها
-                        'origin': 'https://maisam-mohsen.github.io' // برای امنیت بیشتر API
+                        'loop': 1, 
+                        'playlist': videoId, 
+                        'autoplay': 1, // دستور پخش خودکار
+                        'mute': 1,     // الزامی برای پخش خودکار (بدون صدا)
+                        'rel': 0
                     },
                     events: {
                         'onReady': function(event) {
                             var p = event.target;
-                            p.setPlaybackRate(globalConfig.speed);
+                            p.setPlaybackRate(currentSpeed);
                             if (typeof p.setPlaybackQuality === 'function') {
-                                p.setPlaybackQuality(globalConfig.quality);
+                                p.setPlaybackQuality('small');
                             }
-                            
-                            if (shouldMute) {
-                                p.mute();
-                            } else {
-                                p.unMute(); 
-                            }
+                            p.mute();
+                            p.playVideo(); // تلاش دوباره برای پخش
                         }
                     }
                 });
@@ -168,34 +153,51 @@
             });
         }
 
-        // وقتی کاربر روی دکمه شروع کلیک کرد
-        document.getElementById('start-btn').addEventListener('click', function() {
-            if (isStarted) return;
-            isStarted = true;
-
-            // مخفی کردن صفحه سیاه
-            document.getElementById('start-overlay').style.display = 'none';
-
-            // پخش همه ویدیوها
-            players.forEach(function(p) {
-                if (p && p.playVideo) {
-                    p.playVideo();
-                }
-            });
-
-            // فعال کردن کلیک روی ویدیوها بعد از شروع (در صورت نیاز)
-            var iframes = document.querySelectorAll('.video-container iframe');
-            iframes.forEach(function(iframe) {
-                iframe.style.pointerEvents = 'auto';
-            });
-        });
-
-        // کدهای مربوط به پس‌زمینه
-        document.addEventListener('visibilitychange', function() {
-            if (isStarted) {
-                players.forEach(function(p) {
-                    if (p && p.playVideo) p.playVideo();
+        // تابع قطع/وصل صدا
+        function toggleMute() {
+            isMuted = !isMuted;
+            var btn = document.getElementById('btn-mute');
+            
+            if (isMuted) {
+                btn.innerHTML = '🔇 قطع صدا';
+                btn.classList.add('active');
+                players.forEach(function(p) { if(p && p.mute) p.mute(); });
+            } else {
+                btn.innerHTML = '🔊 وصل صدا';
+                btn.classList.remove('active');
+                players.forEach(function(p) { 
+                    if(p && p.unMute) p.unMute(); 
                 });
+            }
+        }
+
+        // تابع تغییر سرعت
+        function toggleSpeed() {
+            currentSpeed = currentSpeed === 0.25 ? 1.0 : 0.25;
+            var btn = document.getElementById('btn-speed');
+            btn.innerHTML = '⚡ سرعت: ' + currentSpeed + 'x';
+            players.forEach(function(p) { 
+                if(p && p.setPlaybackRate) p.setPlaybackRate(currentSpeed); 
+            });
+        }
+
+        // تابع تغییر به حالت دسکتاپ
+        function toggleDesktop() {
+            isDesktopForced = !isDesktopForced;
+            var btn = document.getElementById('btn-desktop');
+            if (isDesktopForced) {
+                document.body.classList.add('force-desktop');
+                btn.classList.add('active');
+            } else {
+                document.body.classList.remove('force-desktop');
+                btn.classList.remove('active');
+            }
+        }
+
+        // ادامه پخش در پس زمینه
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                players.forEach(function(p) { if (p && p.playVideo) p.playVideo(); });
             }
         });
     </script>
