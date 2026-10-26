@@ -2,19 +2,74 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>پخش‌کننده چندتایی یوتیوب - تنظیمات سفارشی</title>
+    <!-- غیرفعال کردن Scaling موبایل و اجبار به رندر دسکتاپ (Desktop Site Mode) -->
+    <meta name="viewport" content="width=1280, initial-scale=1.0, maximum-scale=1.0">
+    <title>پخش‌کننده چندتایی یوتیوب - حالت دسکتاپ کامل (Unmuted)</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; }
+        body { 
+            font-family: Tahoma, sans-serif; 
+            background: #121212; 
+            color: #fff; 
+            margin: 0; 
+            padding: 20px;
+            min-width: 1200px; /* ضمانت عدم انقباض صفحه در دستگاه‌های موبایل */
+        }
         h1 { text-align: center; color: #ffbb00; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-        .video-container { background: #1e1e1e; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
-        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 4px; }
+        .controls-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-unmute {
+            background-color: #ffbb00;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+        .btn-unmute:hover {
+            background-color: #e6a800;
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .video-container { 
+            background: #1e1e1e; 
+            padding: 10px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+        }
+        .video-wrapper { 
+            position: relative; 
+            padding-bottom: 56.25%; 
+            height: 0; 
+            overflow: hidden; 
+        }
+        .video-wrapper iframe { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            border-radius: 4px; 
+        }
     </style>
 </head>
 <body>
 
-    <h1>پخش‌کننده چندتایی یوتیوب (Loop, Speed 0.25, Low Quality, Autoplay)</h1>
+    <h1>پخش‌کننده چندتایی یوتیوب (Desktop Mode, Loop, Speed 0.25, Low Quality, Autoplay, Unmuted)</h1>
+
+    <div class="controls-bar">
+        <button class="btn-unmute" onclick="unmuteAllPlayers()">🔊 فعال‌سازی/تایید صدای همه ویدیوها (Unmute All)</button>
+    </div>
 
     <div class="grid">
         <div class="video-container">
@@ -38,7 +93,7 @@
     </div>
 
     <script>
-        // بارگذاری اسکریپت API یوتیوب
+        // بارگذاری اسکریپت API رسمی یوتیوب
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -64,23 +119,35 @@
                         playerVars: {
                             'autoplay': 1,           // Autoplay فعال
                             'loop': 1,               // Loop فعال
-                            'playlist': videoIds[index], // پارامتر الزامی برای تکرار ویدیو در یوتیوب
+                            'playlist': videoIds[index], // تکرار مجدد همین ویدیو
                             'controls': 1,
-                            'rel': 0
+                            'rel': 0,
+                            'playsinline': 0          // اجبار به عدم اجرای Inline موبایلی و حالت دسکتاپ
                         },
                         events: {
                             'onReady': function(event) {
-                                // تنظیم سرعت پخش روی 0.25 (Speed 0.25)
+                                // 1. تنظیم سرعت 0.25
                                 event.target.setPlaybackRate(0.25);
-                                // تنظیم کیفیت روی پایین‌ترین حد (Quality low)
+                                // 2. تنظیم کیفیت پایین
                                 event.target.setPlaybackQuality('small');
-                                // بی‌صدا کردن برای اجرای موفق اتوپلی طبق قوانین مرورگرها
-                                event.target.mute();
+                                // 3. فعال‌سازی صدا (Unmute)
+                                event.target.unMute();
                                 event.target.playVideo();
                             }
                         }
                     });
                 })(i);
+            }
+        }
+
+        // تابع کلیک مستقیم جهت برطرف کردن محدودیت مرورگرها برای Unmute همزمان تمام ویدیوها
+        function unmuteAllPlayers() {
+            for (var i = 0; i < players.length; i++) {
+                if (players[i] && players[i].unMute) {
+                    players[i].unMute();
+                    players[i].setPlaybackRate(0.25);
+                    players[i].playVideo();
+                }
             }
         }
     </script>
