@@ -1,100 +1,88 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Multiview</title>
-<style>
-  :root{--accent:#f5b942}
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:#0b0b0b;color:#eee;font-family:system-ui,Tahoma,sans-serif}
-  #grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:4px;height:100%;grid-auto-rows:1fr}
-  .cell{position:relative;background:#000;min-height:0}
-  .cell div,.cell iframe{width:100%;height:100%}
-  @media (max-width:700px){#grid{grid-template-columns:1fr;height:auto}.cell{aspect-ratio:16/9}}
-  #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);z-index:10}
-  #start button{font-size:22px;padding:18px 32px;border:0;border-radius:14px;background:var(--accent);color:#000;cursor:pointer}
-</style>
+    <meta charset="UTF-8">
+    <title>پخش‌کننده چندتایی یوتیوب - تنظیمات سفارشی</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; }
+        h1 { text-align: center; color: #ffbb00; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .video-container { background: #1e1e1e; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 4px; }
+    </style>
 </head>
 <body>
-<div id="grid"></div>
-<div id="start"><button id="go">▶ پخش همه</button></div>
 
-<script>
-// ===== Settings =====
-const SPEED   = 0.25;     // playback speed
-const QUALITY = 'small';  // 240p (tiny=144p, medium=360p)
-const LOOP    = true;
-const MUTED   = false;
-const AUTOPLAY= true;
+    <h1>پخش‌کننده چندتایی یوتیوب (Loop, Speed 0.25, Low Quality, Autoplay)</h1>
 
-// ===== Videos (id + saved progress in seconds) =====
-const VIDEOS = [
-  { id: 'aLBmwItG1O0', t: 340 },
-  { id: 'OI-i0uqjQi4', t: 713 },
-  { id: 'lwOQn36TeiA', t: 4 },
-  { id: 'A0fVc5kOmCs', t: 40 },
-  { id: 'f11BI1x6ezg', t: 25 },
-  { id: '0hYlbJFgpGE', t: 89 }
-];
-// Add ?fresh=1 to start all videos from 0
-const FRESH = new URLSearchParams(location.search).has('fresh');
+    <div class="grid">
+        <div class="video-container">
+            <div class="video-wrapper"><div id="player-0"></div></div>
+        </div>
+        <div class="video-container">
+            <div class="video-wrapper"><div id="player-1"></div></div>
+        </div>
+        <div class="video-container">
+            <div class="video-wrapper"><div id="player-2"></div></div>
+        </div>
+        <div class="video-container">
+            <div class="video-wrapper"><div id="player-3"></div></div>
+        </div>
+        <div class="video-container">
+            <div class="video-wrapper"><div id="player-4"></div></div>
+        </div>
+        <div class="video-container">
+            <div class="video-wrapper"><div id="player-5"></div></div>
+        </div>
+    </div>
 
-const grid = document.getElementById('grid');
-VIDEOS.forEach((v, i) => {
-  const c = document.createElement('div');
-  c.className = 'cell';
-  c.innerHTML = '<div id="p' + i + '"></div>';
-  grid.appendChild(c);
-});
+    <script>
+        // بارگذاری اسکریپت API یوتیوب
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-const players = [];
-function apply(p) {
-  try {
-    MUTED ? p.mute() : p.unMute();
-    p.setVolume(100);
-    p.setPlaybackRate(SPEED);
-    p.setPlaybackQuality(QUALITY);
-  } catch (e) {}
-}
-function onYouTubeIframeAPIReady() {
-  VIDEOS.forEach((v, i) => {
-    players[i] = new YT.Player('p' + i, {
-      videoId: v.id,
-      playerVars: {
-        autoplay: AUTOPLAY ? 1 : 0,
-        loop: LOOP ? 1 : 0,
-        playlist: v.id,
-        start: FRESH ? 0 : v.t,
-        playsinline: 1,
-        rel: 0
-      },
-      events: {
-        onReady: e => { apply(e.target); if (AUTOPLAY) e.target.playVideo(); },
-        onStateChange: e => {
-          if (e.data === YT.PlayerState.PLAYING) {
-            apply(e.target);
-            document.getElementById('start').style.display = 'none';
-          }
-          if (LOOP && e.data === YT.PlayerState.ENDED) { e.target.seekTo(0); e.target.playVideo(); }
+        // شناسه‌های ویدیو استخراج شده از داده‌های منبع[span_1](start_span)[span_1](end_span)
+        var videoIds = [
+            'aLBmwItG1O0', //[span_2](start_span)[span_2](end_span)
+            'OI-i0uqjQi4', //[span_3](start_span)[span_3](end_span)
+            'lwOQn36TeiA', //[span_4](start_span)[span_4](end_span)
+            'A0fVc5kOmCs', //[span_5](start_span)[span_5](end_span)
+            'f11BI1x6ezg', //[span_6](start_span)[span_6](end_span)
+            '0hYlbJFgpGE'  //[span_7](start_span)[span_7](end_span)
+        ];
+
+        var players = [];
+
+        function onYouTubeIframeAPIReady() {
+            for (var i = 0; i < videoIds.length; i++) {
+                (function(index) {
+                    players[index] = new YT.Player('player-' + index, {
+                        videoId: videoIds[index],
+                        playerVars: {
+                            'autoplay': 1,           // Autoplay فعال
+                            'loop': 1,               // Loop فعال
+                            'playlist': videoIds[index], // پارامتر الزامی برای تکرار ویدیو در یوتیوب
+                            'controls': 1,
+                            'rel': 0
+                        },
+                        events: {
+                            'onReady': function(event) {
+                                // تنظیم سرعت پخش روی 0.25 (Speed 0.25)
+                                event.target.setPlaybackRate(0.25);
+                                // تنظیم کیفیت روی پایین‌ترین حد (Quality low)
+                                event.target.setPlaybackQuality('small');
+                                // بی‌صدا کردن برای اجرای موفق اتوپلی طبق قوانین مرورگرها
+                                event.target.mute();
+                                event.target.playVideo();
+                            }
+                        }
+                    });
+                })(i);
+            }
         }
-      }
-    });
-  });
-  // Browsers block autoplay with sound until a click
-  setTimeout(() => {
-    const anyPlaying = players.some(p => p.getPlayerState && p.getPlayerState() === YT.PlayerState.PLAYING);
-    if (!anyPlaying) document.getElementById('start').style.display = 'flex';
-  }, 2000);
-}
-document.getElementById('go').onclick = () => {
-  players.forEach(p => { apply(p); p.playVideo(); });
-  document.getElementById('start').style.display = 'none';
-};
-
-const s = document.createElement('script');
-s.src = 'https://www.youtube.com/iframe_api';
-document.head.appendChild(s);
-</script>
+    </script>
 </body>
 </html>
