@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280, initial-scale=1.0">
-    <title>Multiview Pro - YouTube Manager</title>
+    <title>Active in background - Multiview</title>
     <style>
         :root {
             --bg-color: #0f0f0f;
@@ -21,27 +21,33 @@
         }
         header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
+        /* سایز کلان و بسیار بزرگ برای متن سر صفحه */
         h1 {
             color: var(--accent-color);
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 52px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-shadow: 0 4px 20px rgba(255, 187, 0, 0.4);
         }
         .master-controls {
             background: var(--card-bg);
-            padding: 15px;
-            border-radius: 10px;
+            padding: 15px 25px;
+            border-radius: 12px;
             display: inline-flex;
             gap: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             margin-bottom: 20px;
+            border: 1px solid #333;
         }
         .btn {
             background-color: var(--accent-color);
             color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
+            font-size: 15px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
@@ -85,18 +91,20 @@
             border: none;
         }
         .status-bar {
-            font-size: 12px;
+            font-size: 13px;
             color: #aaa;
             margin-top: 8px;
             display: flex;
             justify-content: space-between;
+            padding: 0 4px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>سیستم پخش چندتایی پیشرفته (Multiview Engine)</h1>
+        <!-- متن سر صفحه با سایز کاملاً کلان و درشت -->
+        <h1>Active in background</h1>
         <div class="master-controls">
             <button class="btn" onclick="masterAction('play')">▶ پخش همه</button>
             <button class="btn btn-secondary" onclick="masterAction('pause')">⏸ توقف همه</button>
@@ -106,7 +114,7 @@
     </header>
 
     <div class="grid-container">
-        <!-- جایگاه‌های ۶ ویدیو استخراج شده از ساختار استاندارد[span_1](start_span)[span_1](end_span) -->
+        <!-- ویدیوها با شناسه‌های استخراج شده از فایل شما[span_1](start_span)[span_1](end_span) -->
         <div class="player-card"><div class="video-wrapper"><div id="iframe-0"></div></div><div class="status-bar"><span>شناسه: aLBmwItG1O0[span_2](start_span)[span_2](end_span)</span><span>وضعیت: آماده</span></div></div>
         <div class="player-card"><div class="video-wrapper"><div id="iframe-1"></div></div><div class="status-bar"><span>شناسه: OI-i0uqjQi4[span_3](start_span)[span_3](end_span)</span><span>وضعیت: آماده</span></div></div>
         <div class="player-card"><div class="video-wrapper"><div id="iframe-2"></div></div><div class="status-bar"><span>شناسه: lwOQn36TeiA[span_4](start_span)[span_4](end_span)</span><span>وضعیت: آماده</span></div></div>
@@ -122,7 +130,7 @@
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        // لیست ویدیوهای استخراج شده از فایل شما[span_8](start_span)[span_8](end_span)
+        // لیست ویدیوها[span_8](start_span)[span_8](end_span)
         const videoIds = [
             'aLBmwItG1O0', //[span_9](start_span)[span_9](end_span)
             'OI-i0uqjQi4', //[span_10](start_span)[span_10](end_span)
@@ -144,14 +152,13 @@
                         'playlist': id, // ضروری برای تکرار (Loop)
                         'controls': 1,
                         'rel': 0,
-                        'playsinline': 0 // حالت دسکتاپ و جلوگیری از اینلاین موبایل
+                        'playsinline': 0 // حالت دسکتاپ
                     },
                     events: {
                         'onReady': function(event) {
-                            // اعمال تنظیمات درخواستی شما
                             event.target.setPlaybackRate(0.25); // سرعت 0.25
                             event.target.setPlaybackQuality('small'); // کیفیت پایین
-                            event.target.mute(); // شروع اولیه بی‌صدا برای دور زدن محدودیت Autoplay مرورگر
+                            event.target.mute(); // بی‌صدا برای شروع اولیه
                             event.target.playVideo();
                         }
                     }
