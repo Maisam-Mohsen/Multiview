@@ -1,32 +1,164 @@
-<!DOCTYPE html>
-<html lang="fa">
+<!doctype html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Maisam TV | شبکه تلویزیونی میثم محسنی</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171717">
+  <title>Multiview Player</title>
   <style>
-    body { margin: 28px 0 0; background:#111; display:grid; gap:8px;
-           grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); padding:8px; }
-    iframe { width:100%; aspect-ratio:16/9; border:0; background:#000; }
+    :root { color-scheme: dark; --accent: #eab308; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #111; color: #f5f5f5; font: 14px/1.4 system-ui, sans-serif; }
+    header { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; background: #171717; border-bottom: 1px solid #333; }
+    h1 { margin: 0 auto 0 0; font-size: 17px; }
+    button, select { border: 1px solid #444; border-radius: 8px; background: #262626; color: #fff; padding: 8px 10px; font: inherit; }
+    button { cursor: pointer; }
+    button.primary { background: var(--accent); color: #171717; border-color: var(--accent); font-weight: 700; }
+    .notice { padding: 10px 12px; color: #d4d4d4; background: #202020; font-size: 12px; }
+    main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+    .tile { min-width: 0; background: #1c1c1c; border: 1px solid #333; border-radius: 10px; overflow: hidden; }
+    .tile-title { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 7px 9px; font-weight: 600; }
+    .tile-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+    .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .tile-controls { display: flex; flex-wrap: wrap; gap: 6px; padding: 7px; }
+    .tile-controls button, .tile-controls select { padding: 6px 8px; font-size: 12px; }
+    .tile-controls input { flex: 1 1 100%; width: 100%; min-width: 0; background: #101010; color: white; border: 1px solid #444; border-radius: 6px; padding: 7px; }
+    .status { color: #a3a3a3; padding: 0 9px 8px; font-size: 11px; }
+    @media (max-width: 600px) { main { grid-template-columns: 1fr; } h1 { width: 100%; } }
   </style>
 </head>
 <body>
-  <!-- اگر iframeها را خودت مینویسی، اینجا قرار بده -->
-  <iframe
-    src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&enablejsapi=1&loop=1&playlist=VIDEO_ID&mute=1"
-    allow="autoplay; encrypted-media; fullscreen"
-    title="Maisam TV"></iframe>
-  <iframe
-    src="https://www.youtube.com/embed/VIDEO_ID2?autoplay=1&enablejsapi=1&loop=1&playlist=VIDEO_ID2&mute=1"
-    allow="autoplay; encrypted-media; fullscreen"
-    title="Maisam TV"></iframe>
+  <header>
+    <h1>Multiview Player</h1>
+    <button class="primary" id="playAll">Play all</button>
+    <button id="pauseAll">Pause all</button>
+    <button id="loopAll">Loop: ON</button>
+    <label>Speed
+      <select id="speedAll">
+        <option value="0.25" selected>0.25×</option>
+        <option value="0.5">0.5×</option>
+        <option value="0.75">0.75×</option>
+        <option value="1">1×</option>
+        <option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option>
+        <option value="2">2×</option>
+      </select>
+    </label>
+  </header>
+  <div class="notice">
+    Autoplay is requested, but browsers may block playback with sound until you tap Play. YouTube may not honor custom speed, looping, or low-quality preferences in every embed.
+  </div>
+  <main id="players" aria-label="Video grid"></main>
 
   <script>
-    // همان کد UserScript را بدون هدر // ==UserScript== اینجا بگذار
-    (function () {
-      'use strict';
-      const SPEED = 0.25;
-      // ... بقیهی کد دقیقاً مثل قبل ...
-    })();
+    const videoIds = [
+      "aLBmwItG1O0",
+      "OI-i0uqjQi4",
+      "lwOQn36TeiA",
+      "A0fVc5kOmCs",
+      "f11BI1x6ezg",
+      "0hYlbJFgpGE"
+    ];
+    const initialSpeed = 0.25;
+    let loopEnabled = true;
+    const playersRoot = document.getElementById("players");
+
+    // YouTube IFrame API is used to request playback controls and playback rate.
+    const apiScript = document.createElement("script");
+    apiScript.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(apiScript);
+
+    const players = [];
+    videoIds.forEach((videoId, index) => {
+      const tile = document.createElement("section");
+      tile.className = "tile";
+      tile.innerHTML = `
+        <div class="tile-title"><span>Video ${index + 1}</span><span>${index + 1}/6</span></div>
+        <div class="player"><div id="yt-${index}"></div></div>
+        <div class="tile-controls">
+          <button data-action="play">Play</button>
+          <button data-action="pause">Pause</button>
+          <button data-action="mute">Mute / Unmute</button>
+          <button data-action="loop">Loop: ON</button>
+          <label>Speed
+            <select data-action="speed">
+              <option value="0.25" selected>0.25×</option>
+              <option value="0.5">0.5×</option>
+              <option value="0.75">0.75×</option>
+              <option value="1">1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+          </label>
+        </div>
+        <div class="status">Requested quality: low (YouTube may choose another quality automatically).</div>
+      `;
+      playersRoot.appendChild(tile);
+      tile.querySelector('[data-action="play"]').addEventListener("click", () => players[index]?.playVideo());
+      tile.querySelector('[data-action="pause"]').addEventListener("click", () => players[index]?.pauseVideo());
+      tile.querySelector('[data-action="mute"]').addEventListener("click", () => {
+        const p = players[index];
+        if (!p) return;
+        p.isMuted() ? p.unMute() : p.mute();
+      });
+      tile.querySelector('[data-action="loop"]').addEventListener("click", event => {
+        loopEnabled = !loopEnabled;
+        event.currentTarget.textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`;
+        players.forEach(p => { if (p) p.setLoop(loopEnabled); });
+        document.getElementById("loopAll").textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`;
+      });
+      tile.querySelector('[data-action="speed"]').addEventListener("change", event => {
+        players[index]?.setPlaybackRate(Number(event.target.value));
+        document.getElementById("speedAll").value = event.target.value;
+      });
+    });
+
+    window.onYouTubeIframeAPIReady = function () {
+      videoIds.forEach((videoId, index) => {
+        players[index] = new YT.Player(`yt-${index}`, {
+          videoId,
+          playerVars: {
+            autoplay: 1,
+            controls: 1,
+            mute: 0,
+            playsinline: 1,
+            rel: 0,
+            loop: loopEnabled ? 1 : 0,
+            playlist: videoId,
+            modestbranding: 1,
+            vq: "small"
+          },
+          events: {
+            onReady: event => {
+              const p = event.target;
+              p.setLoop(loopEnabled);
+              p.setPlaybackRate(initialSpeed);
+              // Do not mute: sound is requested. Browser autoplay policy may block it.
+              p.unMute();
+              p.setPlaybackQuality("small");
+              // Attempt autoplay with sound; a user gesture may be required by the browser.
+              p.playVideo();
+            }
+          }
+        });
+      });
+    };
+
+    document.getElementById("playAll").addEventListener("click", () => players.forEach(p => p?.playVideo()));
+    document.getElementById("pauseAll").addEventListener("click", () => players.forEach(p => p?.pauseVideo()));
+    document.getElementById("loopAll").addEventListener("click", event => {
+      loopEnabled = !loopEnabled;
+      event.currentTarget.textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`;
+      document.querySelectorAll('[data-action="loop"]').forEach(b => b.textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`);
+      players.forEach(p => p?.setLoop(loopEnabled));
+    });
+    document.getElementById("speedAll").addEventListener("change", event => {
+      const speed = Number(event.target.value);
+      document.querySelectorAll('[data-action="speed"]').forEach(s => s.value = String(speed));
+      players.forEach(p => p?.setPlaybackRate(speed));
+    });
   </script>
 </body>
 </html>
