@@ -1,164 +1,100 @@
 <!doctype html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#171717">
-  <title>Multiview Player</title>
-  <style>
-    :root { color-scheme: dark; --accent: #eab308; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #111; color: #f5f5f5; font: 14px/1.4 system-ui, sans-serif; }
-    header { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; background: #171717; border-bottom: 1px solid #333; }
-    h1 { margin: 0 auto 0 0; font-size: 17px; }
-    button, select { border: 1px solid #444; border-radius: 8px; background: #262626; color: #fff; padding: 8px 10px; font: inherit; }
-    button { cursor: pointer; }
-    button.primary { background: var(--accent); color: #171717; border-color: var(--accent); font-weight: 700; }
-    .notice { padding: 10px 12px; color: #d4d4d4; background: #202020; font-size: 12px; }
-    main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
-    .tile { min-width: 0; background: #1c1c1c; border: 1px solid #333; border-radius: 10px; overflow: hidden; }
-    .tile-title { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 7px 9px; font-weight: 600; }
-    .tile-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
-    .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-    .tile-controls { display: flex; flex-wrap: wrap; gap: 6px; padding: 7px; }
-    .tile-controls button, .tile-controls select { padding: 6px 8px; font-size: 12px; }
-    .tile-controls input { flex: 1 1 100%; width: 100%; min-width: 0; background: #101010; color: white; border: 1px solid #444; border-radius: 6px; padding: 7px; }
-    .status { color: #a3a3a3; padding: 0 9px 8px; font-size: 11px; }
-    @media (max-width: 600px) { main { grid-template-columns: 1fr; } h1 { width: 100%; } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiview</title>
+<style>
+  :root{--accent:#f5b942}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0b0b0b;color:#eee;font-family:system-ui,Tahoma,sans-serif}
+  #grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:4px;height:100%;grid-auto-rows:1fr}
+  .cell{position:relative;background:#000;min-height:0}
+  .cell div,.cell iframe{width:100%;height:100%}
+  @media (max-width:700px){#grid{grid-template-columns:1fr;height:auto}.cell{aspect-ratio:16/9}}
+  #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.65);z-index:10}
+  #start button{font-size:22px;padding:18px 32px;border:0;border-radius:14px;background:var(--accent);color:#000;cursor:pointer}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Multiview Player</h1>
-    <button class="primary" id="playAll">Play all</button>
-    <button id="pauseAll">Pause all</button>
-    <button id="loopAll">Loop: ON</button>
-    <label>Speed
-      <select id="speedAll">
-        <option value="0.25" selected>0.25×</option>
-        <option value="0.5">0.5×</option>
-        <option value="0.75">0.75×</option>
-        <option value="1">1×</option>
-        <option value="1.25">1.25×</option>
-        <option value="1.5">1.5×</option>
-        <option value="2">2×</option>
-      </select>
-    </label>
-  </header>
-  <div class="notice">
-    Autoplay is requested, but browsers may block playback with sound until you tap Play. YouTube may not honor custom speed, looping, or low-quality preferences in every embed.
-  </div>
-  <main id="players" aria-label="Video grid"></main>
+<div id="grid"></div>
+<div id="start"><button id="go">▶ پخش همه</button></div>
 
-  <script>
-    const videoIds = [
-      "aLBmwItG1O0",
-      "OI-i0uqjQi4",
-      "lwOQn36TeiA",
-      "A0fVc5kOmCs",
-      "f11BI1x6ezg",
-      "0hYlbJFgpGE"
-    ];
-    const initialSpeed = 0.25;
-    let loopEnabled = true;
-    const playersRoot = document.getElementById("players");
+<script>
+// ===== Settings =====
+const SPEED   = 0.25;     // playback speed
+const QUALITY = 'small';  // 240p (tiny=144p, medium=360p)
+const LOOP    = true;
+const MUTED   = false;
+const AUTOPLAY= true;
 
-    // YouTube IFrame API is used to request playback controls and playback rate.
-    const apiScript = document.createElement("script");
-    apiScript.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(apiScript);
+// ===== Videos (id + saved progress in seconds) =====
+const VIDEOS = [
+  { id: 'aLBmwItG1O0', t: 340 },
+  { id: 'OI-i0uqjQi4', t: 713 },
+  { id: 'lwOQn36TeiA', t: 4 },
+  { id: 'A0fVc5kOmCs', t: 40 },
+  { id: 'f11BI1x6ezg', t: 25 },
+  { id: '0hYlbJFgpGE', t: 89 }
+];
+// Add ?fresh=1 to start all videos from 0
+const FRESH = new URLSearchParams(location.search).has('fresh');
 
-    const players = [];
-    videoIds.forEach((videoId, index) => {
-      const tile = document.createElement("section");
-      tile.className = "tile";
-      tile.innerHTML = `
-        <div class="tile-title"><span>Video ${index + 1}</span><span>${index + 1}/6</span></div>
-        <div class="player"><div id="yt-${index}"></div></div>
-        <div class="tile-controls">
-          <button data-action="play">Play</button>
-          <button data-action="pause">Pause</button>
-          <button data-action="mute">Mute / Unmute</button>
-          <button data-action="loop">Loop: ON</button>
-          <label>Speed
-            <select data-action="speed">
-              <option value="0.25" selected>0.25×</option>
-              <option value="0.5">0.5×</option>
-              <option value="0.75">0.75×</option>
-              <option value="1">1×</option>
-              <option value="1.25">1.25×</option>
-              <option value="1.5">1.5×</option>
-              <option value="2">2×</option>
-            </select>
-          </label>
-        </div>
-        <div class="status">Requested quality: low (YouTube may choose another quality automatically).</div>
-      `;
-      playersRoot.appendChild(tile);
-      tile.querySelector('[data-action="play"]').addEventListener("click", () => players[index]?.playVideo());
-      tile.querySelector('[data-action="pause"]').addEventListener("click", () => players[index]?.pauseVideo());
-      tile.querySelector('[data-action="mute"]').addEventListener("click", () => {
-        const p = players[index];
-        if (!p) return;
-        p.isMuted() ? p.unMute() : p.mute();
-      });
-      tile.querySelector('[data-action="loop"]').addEventListener("click", event => {
-        loopEnabled = !loopEnabled;
-        event.currentTarget.textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`;
-        players.forEach(p => { if (p) p.setLoop(loopEnabled); });
-        document.getElementById("loopAll").textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`;
-      });
-      tile.querySelector('[data-action="speed"]').addEventListener("change", event => {
-        players[index]?.setPlaybackRate(Number(event.target.value));
-        document.getElementById("speedAll").value = event.target.value;
-      });
-    });
+const grid = document.getElementById('grid');
+VIDEOS.forEach((v, i) => {
+  const c = document.createElement('div');
+  c.className = 'cell';
+  c.innerHTML = '<div id="p' + i + '"></div>';
+  grid.appendChild(c);
+});
 
-    window.onYouTubeIframeAPIReady = function () {
-      videoIds.forEach((videoId, index) => {
-        players[index] = new YT.Player(`yt-${index}`, {
-          videoId,
-          playerVars: {
-            autoplay: 1,
-            controls: 1,
-            mute: 0,
-            playsinline: 1,
-            rel: 0,
-            loop: loopEnabled ? 1 : 0,
-            playlist: videoId,
-            modestbranding: 1,
-            vq: "small"
-          },
-          events: {
-            onReady: event => {
-              const p = event.target;
-              p.setLoop(loopEnabled);
-              p.setPlaybackRate(initialSpeed);
-              // Do not mute: sound is requested. Browser autoplay policy may block it.
-              p.unMute();
-              p.setPlaybackQuality("small");
-              // Attempt autoplay with sound; a user gesture may be required by the browser.
-              p.playVideo();
-            }
+const players = [];
+function apply(p) {
+  try {
+    MUTED ? p.mute() : p.unMute();
+    p.setVolume(100);
+    p.setPlaybackRate(SPEED);
+    p.setPlaybackQuality(QUALITY);
+  } catch (e) {}
+}
+function onYouTubeIframeAPIReady() {
+  VIDEOS.forEach((v, i) => {
+    players[i] = new YT.Player('p' + i, {
+      videoId: v.id,
+      playerVars: {
+        autoplay: AUTOPLAY ? 1 : 0,
+        loop: LOOP ? 1 : 0,
+        playlist: v.id,
+        start: FRESH ? 0 : v.t,
+        playsinline: 1,
+        rel: 0
+      },
+      events: {
+        onReady: e => { apply(e.target); if (AUTOPLAY) e.target.playVideo(); },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.PLAYING) {
+            apply(e.target);
+            document.getElementById('start').style.display = 'none';
           }
-        });
-      });
-    };
+          if (LOOP && e.data === YT.PlayerState.ENDED) { e.target.seekTo(0); e.target.playVideo(); }
+        }
+      }
+    });
+  });
+  // Browsers block autoplay with sound until a click
+  setTimeout(() => {
+    const anyPlaying = players.some(p => p.getPlayerState && p.getPlayerState() === YT.PlayerState.PLAYING);
+    if (!anyPlaying) document.getElementById('start').style.display = 'flex';
+  }, 2000);
+}
+document.getElementById('go').onclick = () => {
+  players.forEach(p => { apply(p); p.playVideo(); });
+  document.getElementById('start').style.display = 'none';
+};
 
-    document.getElementById("playAll").addEventListener("click", () => players.forEach(p => p?.playVideo()));
-    document.getElementById("pauseAll").addEventListener("click", () => players.forEach(p => p?.pauseVideo()));
-    document.getElementById("loopAll").addEventListener("click", event => {
-      loopEnabled = !loopEnabled;
-      event.currentTarget.textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`;
-      document.querySelectorAll('[data-action="loop"]').forEach(b => b.textContent = `Loop: ${loopEnabled ? "ON" : "OFF"}`);
-      players.forEach(p => p?.setLoop(loopEnabled));
-    });
-    document.getElementById("speedAll").addEventListener("change", event => {
-      const speed = Number(event.target.value);
-      document.querySelectorAll('[data-action="speed"]').forEach(s => s.value = String(speed));
-      players.forEach(p => p?.setPlaybackRate(speed));
-    });
-  </script>
+const s = document.createElement('script');
+s.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(s);
+</script>
 </body>
 </html>
