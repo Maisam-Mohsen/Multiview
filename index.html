@@ -18,48 +18,33 @@
             margin: 0;
             padding: 20px;
             min-width: 1200px;
+            text-align: center;
         }
         header {
-            text-align: center;
             margin-bottom: 30px;
         }
-        /* سایز کلان و بسیار بزرگ برای متن سر صفحه */
-        h1 {
-            color: var(--accent-color);
-            font-size: 52px;
-            font-weight: 900;
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-            text-shadow: 0 4px 20px rgba(255, 187, 0, 0.4);
-        }
-        .master-controls {
-            background: var(--card-bg);
-            padding: 15px 25px;
-            border-radius: 12px;
-            display: inline-flex;
-            gap: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-            border: 1px solid #333;
-        }
-        .btn {
+        /* دکمه کلان و تک Active in background */
+        .btn-active-bg {
             background-color: var(--accent-color);
             color: #000;
             border: none;
-            padding: 12px 24px;
-            font-size: 15px;
-            font-weight: bold;
-            border-radius: 6px;
+            padding: 20px 40px;
+            font-size: 28px;
+            font-weight: 900;
+            border-radius: 14px;
             cursor: pointer;
+            box-shadow: 0 6px 25px rgba(255, 187, 0, 0.4);
             transition: 0.2s;
+            letter-spacing: 1px;
         }
-        .btn:hover {
-            opacity: 0.85;
-            transform: translateY(-1px);
+        .btn-active-bg:hover {
+            background-color: #e6a800;
+            transform: translateY(-2px);
         }
-        .btn-secondary {
-            background-color: #333;
-            color: #fff;
+        .notice {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 12px;
         }
         .grid-container {
             display: grid;
@@ -103,24 +88,19 @@
 <body>
 
     <header>
-        <!-- متن سر صفحه با سایز کاملاً کلان و درشت -->
-        <h1>Active in background</h1>
-        <div class="master-controls">
-            <button class="btn" onclick="masterAction('play')">▶ پخش همه</button>
-            <button class="btn btn-secondary" onclick="masterAction('pause')">⏸ توقف همه</button>
-            <button class="btn" onclick="masterAction('unmute')">🔊 فعال‌سازی صدا (Unmute All)</button>
-            <button class="btn btn-secondary" onclick="masterAction('mute')">🔇 بی‌صدا کردن همه</button>
-        </div>
+        <!-- دکمه تک و کلان با درخواست شما -->
+        <button class="btn-active-bg" onclick="activeInBackground()">Active in background</button>
+        <div class="notice">برای فعال‌سازی کامل صدا، سرعت 0.25 و اجرای هم‌زمان، روی دکمه بالا کلیک کنید</div>
     </header>
 
     <div class="grid-container">
-        <!-- ویدیوها با شناسه‌های استخراج شده از فایل شما[span_1](start_span)[span_1](end_span) -->
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-0"></div></div><div class="status-bar"><span>شناسه: aLBmwItG1O0[span_2](start_span)[span_2](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-1"></div></div><div class="status-bar"><span>شناسه: OI-i0uqjQi4[span_3](start_span)[span_3](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-2"></div></div><div class="status-bar"><span>شناسه: lwOQn36TeiA[span_4](start_span)[span_4](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-3"></div></div><div class="status-bar"><span>شناسه: A0fVc5kOmCs[span_5](start_span)[span_5](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-4"></div></div><div class="status-bar"><span>شناسه: f11BI1x6ezg[span_6](start_span)[span_6](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-5"></div></div><div class="status-bar"><span>شناسه: 0hYlbJFgpGE[span_7](start_span)[span_7](end_span)</span><span>وضعیت: آماده</span></div></div>
+        <!-- ویدیوها با شناسه‌های استخراج شده از فایل شما[span_0](start_span)[span_0](end_span) -->
+        <div class="player-card"><div class="video-wrapper"><div id="iframe-0"></div></div><div class="status-bar"><span>شناسه: aLBmwItG1O0[span_1](start_span)[span_1](end_span)</span><span>وضعیت: آماده</span></div></div>
+        <div class="player-card"><div class="video-wrapper"><div id="iframe-1"></div></div><div class="status-bar"><span>شناسه: OI-i0uqjQi4[span_2](start_span)[span_2](end_span)</span><span>وضعیت: آماده</span></div></div>
+        <div class="player-card"><div class="video-wrapper"><div id="iframe-2"></div></div><div class="status-bar"><span>شناسه: lwOQn36TeiA[span_3](start_span)[span_3](end_span)</span><span>وضعیت: آماده</span></div></div>
+        <div class="player-card"><div class="video-wrapper"><div id="iframe-3"></div></div><div class="status-bar"><span>شناسه: A0fVc5kOmCs[span_4](start_span)[span_4](end_span)</span><span>وضعیت: آماده</span></div></div>
+        <div class="player-card"><div class="video-wrapper"><div id="iframe-4"></div></div><div class="status-bar"><span>شناسه: f11BI1x6ezg[span_5](start_span)[span_5](end_span)</span><span>وضعیت: آماده</span></div></div>
+        <div class="player-card"><div class="video-wrapper"><div id="iframe-5"></div></div><div class="status-bar"><span>شناسه: 0hYlbJFgpGE[span_6](start_span)[span_6](end_span)</span><span>وضعیت: آماده</span></div></div>
     </div>
 
     <script>
@@ -130,14 +110,14 @@
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        // لیست ویدیوها[span_8](start_span)[span_8](end_span)
+        // لیست ویدیوها[span_7](start_span)[span_7](end_span)
         const videoIds = [
-            'aLBmwItG1O0', //[span_9](start_span)[span_9](end_span)
-            'OI-i0uqjQi4', //[span_10](start_span)[span_10](end_span)
-            'lwOQn36TeiA', //[span_11](start_span)[span_11](end_span)
-            'A0fVc5kOmCs', //[span_12](start_span)[span_12](end_span)
-            'f11BI1x6ezg', //[span_13](start_span)[span_13](end_span)
-            '0hYlbJFgpGE'  //[span_14](start_span)[span_14](end_span)
+            'aLBmwItG1O0', //[span_8](start_span)[span_8](end_span)
+            'OI-i0uqjQi4', //[span_9](start_span)[span_9](end_span)
+            'lwOQn36TeiA', //[span_10](start_span)[span_10](end_span)
+            'A0fVc5kOmCs', //[span_11](start_span)[span_11](end_span)
+            'f11BI1x6ezg', //[span_12](start_span)[span_12](end_span)
+            '0hYlbJFgpGE'  //[span_13](start_span)[span_13](end_span)
         ];
 
         let players = [];
@@ -152,13 +132,13 @@
                         'playlist': id, // ضروری برای تکرار (Loop)
                         'controls': 1,
                         'rel': 0,
-                        'playsinline': 0 // حالت دسکتاپ
+                        'playsinline': 0, // حالت دسکتاپ
+                        'mute': 1 // شروع اولیه بی‌صدا جهت انطباق با قوانین مرورگر
                     },
                     events: {
                         'onReady': function(event) {
                             event.target.setPlaybackRate(0.25); // سرعت 0.25
                             event.target.setPlaybackQuality('small'); // کیفیت پایین
-                            event.target.mute(); // بی‌صدا برای شروع اولیه
                             event.target.playVideo();
                         }
                     }
@@ -166,19 +146,15 @@
             });
         }
 
-        // تابع کنترل متمرکز برای مدیریت هم‌زمان همه ویدیوها
-        function masterAction(action) {
+        // تابع یکپارچه برای فعال‌سازی صدا، سرعت و اجرای کامل با یک کلیک
+        function activeInBackground() {
             players.forEach(player => {
                 if (player && player.getIframe()) {
-                    if (action === 'play') player.playVideo();
-                    if (action === 'pause') player.pauseVideo();
-                    if (action === 'unmute') {
-                        player.unMute();
-                        player.setVolume(100);
-                        player.setPlaybackRate(0.25);
-                        player.playVideo();
-                    }
-                    if (action === 'mute') player.mute();
+                    player.unMute();
+                    player.setVolume(100);
+                    player.setPlaybackRate(0.25);
+                    player.setPlaybackQuality('small');
+                    player.playVideo();
                 }
             });
         }
