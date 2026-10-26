@@ -3,160 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280, initial-scale=1.0">
-    <title>Active in background - Multiview</title>
+    <title>YouTube Multiview - Automatic</title>
     <style>
-        :root {
-            --bg-color: #0f0f0f;
-            --card-bg: #1f1f1f;
-            --accent-color: #ffbb00;
-            --text-color: #ffffff;
-        }
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
+        body { 
+            background: #0f0f0f; 
+            color: #fff; 
+            margin: 0; 
+            padding: 20px; 
             min-width: 1200px;
-            text-align: center;
+            font-family: Tahoma, sans-serif;
         }
-        header {
-            margin-bottom: 30px;
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
         }
-        /* دکمه کلان و تک Active in background */
-        .btn-active-bg {
-            background-color: var(--accent-color);
-            color: #000;
-            border: none;
-            padding: 20px 40px;
-            font-size: 28px;
-            font-weight: 900;
-            border-radius: 14px;
-            cursor: pointer;
-            box-shadow: 0 6px 25px rgba(255, 187, 0, 0.4);
-            transition: 0.2s;
-            letter-spacing: 1px;
+        .video-box { 
+            background: #1a1a1a; 
+            padding: 10px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
         }
-        .btn-active-bg:hover {
-            background-color: #e6a800;
-            transform: translateY(-2px);
+        .video-wrapper { 
+            position: relative; 
+            padding-bottom: 56.25%; 
+            height: 0; 
+            overflow: hidden; 
+            border-radius: 6px; 
         }
-        .notice {
-            color: #aaa;
-            font-size: 14px;
-            margin-top: 12px;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .player-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-            border: 1px solid #333;
-        }
-        .video-wrapper {
-            position: relative;
-            padding-bottom: 56.25%; /* نسبت 16:9 */
-            height: 0;
-            overflow: hidden;
-            border-radius: 8px;
-        }
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .status-bar {
-            font-size: 13px;
-            color: #aaa;
-            margin-top: 8px;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 4px;
+        .video-wrapper iframe { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <!-- دکمه تک و کلان با درخواست شما -->
-        <button class="btn-active-bg" onclick="activeInBackground()">Active in background</button>
-        <div class="notice">برای فعال‌سازی کامل صدا، سرعت 0.25 و اجرای هم‌زمان، روی دکمه بالا کلیک کنید</div>
-    </header>
-
-    <div class="grid-container">
-        <!-- ویدیوها با شناسه‌های استخراج شده از فایل شما[span_0](start_span)[span_0](end_span) -->
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-0"></div></div><div class="status-bar"><span>شناسه: aLBmwItG1O0[span_1](start_span)[span_1](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-1"></div></div><div class="status-bar"><span>شناسه: OI-i0uqjQi4[span_2](start_span)[span_2](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-2"></div></div><div class="status-bar"><span>شناسه: lwOQn36TeiA[span_3](start_span)[span_3](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-3"></div></div><div class="status-bar"><span>شناسه: A0fVc5kOmCs[span_4](start_span)[span_4](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-4"></div></div><div class="status-bar"><span>شناسه: f11BI1x6ezg[span_5](start_span)[span_5](end_span)</span><span>وضعیت: آماده</span></div></div>
-        <div class="player-card"><div class="video-wrapper"><div id="iframe-5"></div></div><div class="status-bar"><span>شناسه: 0hYlbJFgpGE[span_6](start_span)[span_6](end_span)</span><span>وضعیت: آماده</span></div></div>
+    <div class="grid">
+        <div class="video-box"><div class="video-wrapper"><div id="player-0"></div></div></div>
+        <div class="video-box"><div class="video-wrapper"><div id="player-1"></div></div></div>
+        <div class="video-box"><div class="video-wrapper"><div id="player-2"></div></div></div>
+        <div class="video-box"><div class="video-wrapper"><div id="player-3"></div></div></div>
+        <div class="video-box"><div class="video-wrapper"><div id="player-4"></div></div></div>
+        <div class="video-box"><div class="video-wrapper"><div id="player-5"></div></div></div>
     </div>
 
     <script>
-        // بارگذاری کتابخانه رسمی YouTube IFrame API
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        // لیست ویدیوها[span_7](start_span)[span_7](end_span)
-        const videoIds = [
-            'aLBmwItG1O0', //[span_8](start_span)[span_8](end_span)
-            'OI-i0uqjQi4', //[span_9](start_span)[span_9](end_span)
-            'lwOQn36TeiA', //[span_10](start_span)[span_10](end_span)
-            'A0fVc5kOmCs', //[span_11](start_span)[span_11](end_span)
-            'f11BI1x6ezg', //[span_12](start_span)[span_12](end_span)
-            '0hYlbJFgpGE'  //[span_13](start_span)[span_13](end_span)
+        // شناسه‌های ویدیو استخراج شده از فایل شما[span_1](start_span)[span_1](end_span)
+        var videoIds = [
+            'aLBmwItG1O0', //[span_2](start_span)[span_2](end_span)
+            'OI-i0uqjQi4', //[span_3](start_span)[span_3](end_span)
+            'lwOQn36TeiA', //[span_4](start_span)[span_4](end_span)
+            'A0fVc5kOmCs', //[span_5](start_span)[span_5](end_span)
+            'f11BI1x6ezg', //[span_6](start_span)[span_6](end_span)
+            '0hYlbJFgpGE'  //[span_7](start_span)[span_7](end_span)
         ];
 
-        let players = [];
+        var players = [];
 
         function onYouTubeIframeAPIReady() {
-            videoIds.forEach((id, index) => {
-                players[index] = new YT.Player('iframe-' + index, {
-                    videoId: id,
-                    playerVars: {
-                        'autoplay': 1,
-                        'loop': 1,
-                        'playlist': id, // ضروری برای تکرار (Loop)
-                        'controls': 1,
-                        'rel': 0,
-                        'playsinline': 0, // حالت دسکتاپ
-                        'mute': 1 // شروع اولیه بی‌صدا جهت انطباق با قوانین مرورگر
-                    },
-                    events: {
-                        'onReady': function(event) {
-                            event.target.setPlaybackRate(0.25); // سرعت 0.25
-                            event.target.setPlaybackQuality('small'); // کیفیت پایین
-                            event.target.playVideo();
+            for (var i = 0; i < videoIds.length; i++) {
+                (function(index) {
+                    players[index] = new YT.Player('player-' + index, {
+                        videoId: videoIds[index],
+                        playerVars: {
+                            'autoplay': 1,
+                            'loop': 1,
+                            'playlist': videoIds[index],
+                            'controls': 1,
+                            'rel': 0,
+                            'playsinline': 0,
+                            'mute': 0 // تلاش برای پخش صدادار به صورت خودکار
+                        },
+                        events: {
+                            'onReady': function(event) {
+                                event.target.setPlaybackRate(0.25);
+                                event.target.setPlaybackQuality('small');
+                                event.target.unMute();
+                                event.target.setVolume(100);
+                                event.target.playVideo();
+                            }
                         }
-                    }
-                });
-            });
-        }
-
-        // تابع یکپارچه برای فعال‌سازی صدا، سرعت و اجرای کامل با یک کلیک
-        function activeInBackground() {
-            players.forEach(player => {
-                if (player && player.getIframe()) {
-                    player.unMute();
-                    player.setVolume(100);
-                    player.setPlaybackRate(0.25);
-                    player.setPlaybackQuality('small');
-                    player.playVideo();
-                }
-            });
+                    });
+                })(i);
+            }
         }
     </script>
 </body>
