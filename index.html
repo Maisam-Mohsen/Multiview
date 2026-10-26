@@ -2,9 +2,8 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- غیرفعال کردن Scaling موبایل و اجبار به رندر دسکتاپ (Desktop Site Mode) -->
     <meta name="viewport" content="width=1280, initial-scale=1.0, maximum-scale=1.0">
-    <title>پخش‌کننده چندتایی یوتیوب - حالت دسکتاپ کامل (Unmuted)</title>
+    <title>پخش‌کننده چندتایی یوتیوب - حالت دسکتاپ</title>
     <style>
         body { 
             font-family: Tahoma, sans-serif; 
@@ -12,7 +11,7 @@
             color: #fff; 
             margin: 0; 
             padding: 20px;
-            min-width: 1200px; /* ضمانت عدم انقباض صفحه در دستگاه‌های موبایل */
+            min-width: 1200px;
         }
         h1 { text-align: center; color: #ffbb00; }
         .controls-bar {
@@ -20,18 +19,24 @@
             margin-bottom: 20px;
         }
         .btn-unmute {
-            background-color: #ffbb00;
-            color: #000;
+            background-color: #ff0000;
+            color: #fff;
             border: none;
-            padding: 12px 24px;
-            font-size: 16px;
+            padding: 15px 30px;
+            font-size: 18px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 10px rgba(255,0,0,0.4);
         }
         .btn-unmute:hover {
-            background-color: #e6a800;
+            background-color: #cc0000;
+        }
+        .notice {
+            text-align: center;
+            color: #ffcc00;
+            margin-bottom: 15px;
+            font-size: 14px;
         }
         .grid { 
             display: grid; 
@@ -65,10 +70,14 @@
 </head>
 <body>
 
-    <h1>پخش‌کننده چندتایی یوتیوب (Desktop Mode, Loop, Speed 0.25, Low Quality, Autoplay, Unmuted)</h1>
+    <h1>پخش‌کننده چندتایی یوتیوب (Desktop Mode, Loop, Speed 0.25, Low Quality)</h1>
+    
+    <div class="notice">
+        ⚠️ به دلیل قوانین مرورگرها برای جلوگیری از سر و صدا، لطفاً ابتدا روی دکمه زیر کلیک کنید تا صدا و تنظیمات روی همه ویدیوها اعمال شود:
+    </div>
 
     <div class="controls-bar">
-        <button class="btn-unmute" onclick="unmuteAllPlayers()">🔊 فعال‌سازی/تایید صدای همه ویدیوها (Unmute All)</button>
+        <button class="btn-unmute" onclick="startAllWithSound()">▶️ کلیک کنید تا همه ویدیوها با صدا و سرعت 0.25 پخش شوند</button>
     </div>
 
     <div class="grid">
@@ -93,20 +102,19 @@
     </div>
 
     <script>
-        // بارگذاری اسکریپت API رسمی یوتیوب
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        // شناسه‌های ویدیو استخراج شده از داده‌های منبع[span_1](start_span)[span_1](end_span)
+        // شناسه‌های ویدیو استخراج شده از فایل شما[span_0](start_span)[span_0](end_span)
         var videoIds = [
-            'aLBmwItG1O0', //[span_2](start_span)[span_2](end_span)
-            'OI-i0uqjQi4', //[span_3](start_span)[span_3](end_span)
-            'lwOQn36TeiA', //[span_4](start_span)[span_4](end_span)
-            'A0fVc5kOmCs', //[span_5](start_span)[span_5](end_span)
-            'f11BI1x6ezg', //[span_6](start_span)[span_6](end_span)
-            '0hYlbJFgpGE'  //[span_7](start_span)[span_7](end_span)
+            'aLBmwItG1O0',[span_1](start_span)[span_1](end_span)
+            'OI-i0uqjQi4',[span_2](start_span)[span_2](end_span)
+            'lwOQn36TeiA',[span_3](start_span)[span_3](end_span)
+            'A0fVc5kOmCs',[span_4](start_span)[span_4](end_span)
+            'f11BI1x6ezg',[span_5](start_span)[span_5](end_span)
+            '0hYlbJFgpGE[span_6](start_span)'[span_6](end_span)
         ];
 
         var players = [];
@@ -117,21 +125,18 @@
                     players[index] = new YT.Player('player-' + index, {
                         videoId: videoIds[index],
                         playerVars: {
-                            'autoplay': 1,           // Autoplay فعال
-                            'loop': 1,               // Loop فعال
-                            'playlist': videoIds[index], // تکرار مجدد همین ویدیو
+                            'autoplay': 1,
+                            'loop': 1,
+                            'playlist': videoIds[index],
                             'controls': 1,
                             'rel': 0,
-                            'playsinline': 0          // اجبار به عدم اجرای Inline موبایلی و حالت دسکتاپ
+                            'playsinline': 0,
+                            'mute': 1 // ابتدا ویدیوها بی‌صدا لود می‌شوند تا مرورگر بلاک نکند
                         },
                         events: {
                             'onReady': function(event) {
-                                // 1. تنظیم سرعت 0.25
                                 event.target.setPlaybackRate(0.25);
-                                // 2. تنظیم کیفیت پایین
                                 event.target.setPlaybackQuality('small');
-                                // 3. فعال‌سازی صدا (Unmute)
-                                event.target.unMute();
                                 event.target.playVideo();
                             }
                         }
@@ -140,12 +145,14 @@
             }
         }
 
-        // تابع کلیک مستقیم جهت برطرف کردن محدودیت مرورگرها برای Unmute همزمان تمام ویدیوها
-        function unmuteAllPlayers() {
+        // تابع اجرایی با دکمه برای دور زدن محدودیت مرورگر و Unmute کامل همه ویدیوها
+        function startAllWithSound() {
             for (var i = 0; i < players.length; i++) {
                 if (players[i] && players[i].unMute) {
                     players[i].unMute();
+                    players[i].setVolume(100);
                     players[i].setPlaybackRate(0.25);
+                    players[i].setPlaybackQuality('small');
                     players[i].playVideo();
                 }
             }
