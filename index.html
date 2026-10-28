@@ -1,307 +1,178 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiview Pro - YouTube Manager</title>
-
-    <style>
-        :root {
-            --bg-color: #0f0f0f;
-            --card-bg: #1f1f1f;
-            --accent-color: #ffbb00;
-            --text-color: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont,
-                'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        h1 {
-            color: var(--accent-color);
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .master-controls {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 10px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            margin: 0 auto 20px;
-            max-width: 1000px;
-        }
-
-        .btn {
-            background-color: var(--accent-color);
-            color: #000;
-            border: none;
-            padding: 10px 18px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .btn-secondary {
-            background-color: #333;
-            color: #fff;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .player-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-            border: 1px solid #333;
-            min-width: 0;
-        }
-
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            overflow: hidden;
-            border-radius: 8px;
-            background: #000;
-        }
-
-        .video-wrapper iframe,
-        .video-wrapper > div {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .status-bar {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 8px;
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            direction: ltr;
-            overflow-wrap: anywhere;
-        }
-
-        @media (max-width: 700px) {
-            .grid-container {
-                grid-template-columns: 1fr;
-            }
-
-            h1 {
-                font-size: 20px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<header>
-    <h1>سیستم پخش چندتایی پیشرفته (Multiview Engine)</h1>
-
-    <div class="master-controls">
-        <button class="btn" onclick="masterAction('play')">
-            ▶ پخش همه
-        </button>
-
-        <button class="btn btn-secondary" onclick="masterAction('pause')">
-            ⏸ توقف همه
-        </button>
-
-        <button class="btn" onclick="masterAction('unmute')">
-            🔊 فعال‌سازی صدا (Unmute All)
-        </button>
-
-        <button class="btn btn-secondary" onclick="masterAction('mute')">
-            🔇 بی‌صدا کردن همه
-        </button>
-    </div>
-</header>
-
-<div class="grid-container">
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-0"></div></div>
-        <div class="status-bar">
-            <span>Video 1: aLBmwItG1O0</span>
-            <span>Multiview</span>
-        </div>
-    </div>
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-1"></div></div>
-        <div class="status-bar">
-            <span>Video 2: OI-i0uqjQi4</span>
-            <span>Multiview</span>
-        </div>
-    </div>
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-2"></div></div>
-        <div class="status-bar">
-            <span>Video 3: lwOQn36TeiA</span>
-            <span>Multiview</span>
-        </div>
-    </div>
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-3"></div></div>
-        <div class="status-bar">
-            <span>Video 4: A0fVc5kOmCs</span>
-            <span>Multiview</span>
-        </div>
-    </div>
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-4"></div></div>
-        <div class="status-bar">
-            <span>Video 5: f11BI1x6ezg</span>
-            <span>Multiview</span>
-        </div>
-    </div>
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-5"></div></div>
-        <div class="status-bar">
-            <span>Video 6: 0hYlbJFgpGE</span>
-            <span>Multiview</span>
-        </div>
-    </div>
-
-    <div class="player-card">
-        <div class="video-wrapper"><div id="iframe-6"></div></div>
-        <div class="status-bar">
-            <span>Video 7: 1kQtNpZbTO0</span>
-            <span>New Video</span>
-        </div>
-    </div>
-
-</div>
-
 <script>
-    // Load the official YouTube IFrame API.
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
+const videoIds = [
+    "aLBmwItG1O0",
+    "OI-i0uqjQi4",
+    "lwOQn36TeiA",
+    "A0fVc5kOmCs",
+    "f11BI1x6ezg",
+    "0hYlbJFgpGE",
+    "1kQtNpZbTO0"
+];
 
-    const videoIds = [
-        'aLBmwItG1O0',
-        'OI-i0uqjQi4',
-        'lwOQn36TeiA',
-        'A0fVc5kOmCs',
-        'f11BI1x6ezg',
-        '0hYlbJFgpGE',
-        '1kQtNpZbTO0'
-    ];
+const players = [];
+let pageInBackground = false;
+let soundRequested = false;
+let manuallyPaused = false;
 
-    const players = [];
-    let userRequestedSound = false;
+/* Load YouTube API */
+const tag = document.createElement("script");
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
 
-    function onYouTubeIframeAPIReady() {
-        videoIds.forEach((id, index) => {
-            players[index] = new YT.Player('iframe-' + index, {
-                videoId: id,
+window.onYouTubeIframeAPIReady = function () {
+    videoIds.forEach((id, index) => {
+        players[index] = new YT.Player("iframe-" + index, {
+            videoId: id,
 
-                playerVars: {
-                    autoplay: 1,
-                    loop: 1,
-                    playlist: id,
-                    controls: 1,
-                    rel: 0,
-                    playsinline: 1,
-                    enablejsapi: 1
+            playerVars: {
+                autoplay: 1,
+                controls: 1,
+                playsinline: 1,
+                loop: 1,
+                playlist: id,
+                rel: 0
+            },
+
+            events: {
+                onReady: function (event) {
+                    const p = event.target;
+
+                    // Phase 1: Start muted for autoplay compatibility.
+                    p.mute();
+                    p.setVolume(100);
+                    p.setPlaybackRate(0.25);
+                    p.playVideo();
+
+                    // Phase 2: Attempt automatic unmuting.
+                    setTimeout(() => {
+                        if (p.getPlayerState() === YT.PlayerState.PLAYING) {
+                            p.unMute();
+                            p.setVolume(100);
+                        }
+                    }, 2000);
                 },
 
-                events: {
-                    onReady: function(event) {
-                        const player = event.target;
-
-                        player.setPlaybackRate(0.25);
-                        player.setVolume(100);
-
-                        // Attempt playback with sound.
-                        // Browsers may block audible autoplay.
-                        player.unMute();
-                        player.playVideo();
-
-                        // Retry muted only if audible autoplay is blocked.
-                        setTimeout(function() {
-                            if (!userRequestedSound &&
-                                player.getPlayerState() !== YT.PlayerState.PLAYING) {
-                                player.mute();
-                                player.playVideo();
-                            }
-                        }, 1500);
+                onStateChange: function (event) {
+                    if (event.data === YT.PlayerState.PLAYING) {
+                        // Retry after playback starts.
+                        if (soundRequested && !pageInBackground) {
+                            event.target.unMute();
+                            event.target.setVolume(100);
+                        }
                     }
                 }
-            });
+            }
+        });
+    });
+};
+
+/* Manual user-gesture fallback */
+function masterAction(action) {
+    if (action === "play") {
+        manuallyPaused = false;
+
+        players.forEach(p => {
+            if (p) p.playVideo();
         });
     }
 
-    function masterAction(action) {
-        if (action === 'unmute') {
-            userRequestedSound = true;
+    if (action === "pause") {
+        manuallyPaused = true;
+
+        players.forEach(p => {
+            if (p) p.pauseVideo();
+        });
+    }
+
+    if (action === "mute") {
+        players.forEach(p => {
+            if (p) p.mute();
+        });
+    }
+
+    if (action === "unmute") {
+        soundRequested = true;
+        manuallyPaused = false;
+
+        players.forEach(p => {
+            if (!p) return;
+
+            p.unMute();
+            p.setVolume(100);
+            p.playVideo();
+        });
+    }
+}
+
+/*
+ * Background transition:
+ * Attempt mute -> short delay -> unmute.
+ *
+ * Browser visibility events are best-effort. Android may suspend
+ * JavaScript before the timer executes.
+ */
+function backgroundSoundCycle() {
+    if (manuallyPaused || !players.length) return;
+
+    players.forEach(p => {
+        if (p) p.mute();
+    });
+
+    setTimeout(() => {
+        if (manuallyPaused) return;
+
+        players.forEach(p => {
+            if (!p) return;
+
+            p.unMute();
+            p.setVolume(100);
+            p.playVideo();
+        });
+    }, 800);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        pageInBackground = true;
+
+        // Attempt the requested mute-then-unmute sequence.
+        backgroundSoundCycle();
+
+    } else {
+        pageInBackground = false;
+
+        if (manuallyPaused) return;
+
+        // Recover players when returning to the page.
+        players.forEach(p => {
+            if (!p) return;
+
+            const state = p.getPlayerState();
+
+            if (state === YT.PlayerState.PAUSED ||
+                state === YT.PlayerState.ENDED) {
+                p.playVideo();
+            }
+
+            if (soundRequested) {
+                p.unMute();
+                p.setVolume(100);
+            }
+        });
+    }
+});
+
+/* Retry recovery while the page is active. */
+setInterval(() => {
+    if (document.hidden || manuallyPaused) return;
+
+    players.forEach(p => {
+        if (!p) return;
+
+        if (p.getPlayerState() === YT.PlayerState.ENDED) {
+            p.seekTo(0);
+            p.playVideo();
         }
-
-        players.forEach(function(player) {
-            if (!player || typeof player.getIframe !== 'function') {
-                return;
-            }
-
-            try {
-                if (action === 'play') {
-                    player.playVideo();
-                }
-
-                if (action === 'pause') {
-                    player.pauseVideo();
-                }
-
-                if (action === 'unmute') {
-                    player.unMute();
-                    player.setVolume(100);
-                    player.setPlaybackRate(0.25);
-                    player.playVideo();
-                }
-
-                if (action === 'mute') {
-                    player.mute();
-                }
-            } catch (error) {
-                console.warn('Player control error:', error);
-            }
-        });
-    }
+    });
+}, 5000);
 </script>
-
-</body>
-</html>
