@@ -14,51 +14,49 @@ let pageInBackground = false;
 let soundRequested = false;
 let manuallyPaused = false;
 
-/* Load YouTube API */
-const tag = document.createElement("script");
-tag.src = "https://www.youtube.com/iframe_api";
-document.head.appendChild(tag);
+/* Load YouTube API asynchronously */
+if (!window.YT) {
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+}
 
 window.onYouTubeIframeAPIReady = function () {
     videoIds.forEach((id, index) => {
         players[index] = new YT.Player("iframe-" + index, {
             videoId: id,
-
             playerVars: {
                 autoplay: 1,
+                mute: 1,             // CRITICAL: Must be specified here for browser autoplay compliance
                 controls: 1,
                 playsinline: 1,
                 loop: 1,
-                playlist: id,
-                rel: 0
+                playlist: id,        // Required for single-video looping
+                rel: 0,
+                enablejsapi: 1
             },
-
             events: {
                 onReady: function (event) {
                     const p = event.target;
-
-                    // Phase 1: Start muted for autoplay compatibility.
-                    p.mute();
                     p.setVolume(100);
-                    p.setPlaybackRate(0.25);
-                    p.playVideo();
+                    
+                    // Safely set playback rate if supported by the stream
+                    try {
+                        p.setPlaybackRate(0.25);
+                    } catch (e) {
+                        console.warn("Playback rate adjustment not supported for video:", id);
+                    }
 
-                    // Phase 2: Attempt automatic unmuting.
-                    setTimeout(() => {
-                        if (p.getPlayerState() === YT.PlayerState.PLAYING) {
-                            p.unMute();
-                            p.setVolume(100);
-                        }
-                    }, 2000);
+                    if (!manuallyPaused) {
+                        p.playVideo();
+                    }
                 },
 
                 onStateChange: function (event) {
-                    if (event.data === YT.PlayerState.PLAYING) {
-                        // Retry after playback starts.
-                        if (soundRequested && !pageInBackground) {
-                            event.target.unMute();
-                            event.target.setVolume(100);
-                        }
+                    // Handle loop recovery if ended
+                    if (event.data === YT.PlayerState.ENDED) {
+                        event.target.seekTo(0);
+                        event.target.playVideo();
                     }
                 }
             }
@@ -66,37 +64,29 @@ window.onYouTubeIframeAPIReady = function () {
     });
 };
 
-/* Manual user-gesture fallback */
+/* Professional user-gesture handler */
 function masterAction(action) {
     if (action === "play") {
         manuallyPaused = false;
-
-        players.forEach(p => {
-            if (p) p.playVideo();
-        });
+        players.forEach(p => { if (p && typeof p.playVideo === "function") p.playVideo(); });
     }
 
     if (action === "pause") {
         manuallyPaused = true;
-
-        players.forEach(p => {
-            if (p) p.pauseVideo();
-        });
+        players.forEach(p => { if (p && typeof p.pauseVideo === "function") p.pauseVideo(); });
     }
 
     if (action === "mute") {
-        players.forEach(p => {
-            if (p) p.mute();
-        });
+        players.forEach(p => { if (p && typeof p.mute === "function") p.mute(); });
     }
 
     if (action === "unmute") {
         soundRequested = true;
         manuallyPaused = false;
 
+        // Browsers permit unmuting ONLY inside an explicit user click handler
         players.forEach(p => {
-            if (!p) return;
-
+            if (!p || typeof p.unMute !== "function") return;
             p.unMute();
             p.setVolume(100);
             p.playVideo();
@@ -104,57 +94,25 @@ function masterAction(action) {
     }
 }
 
-/*
- * Background transition:
- * Attempt mute -> short delay -> unmute.
- *
- * Browser visibility events are best-effort. Android may suspend
- * JavaScript before the timer executes.
- */
-function backgroundSoundCycle() {
-    if (manuallyPaused || !players.length) return;
-
-    players.forEach(p => {
-        if (p) p.mute();
-    });
-
-    setTimeout(() => {
-        if (manuallyPaused) return;
-
-        players.forEach(p => {
-            if (!p) return;
-
-            p.unMute();
-            p.setVolume(100);
-            p.playVideo();
-        });
-    }, 800);
-}
-
+/* Page Visibility Handling */
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
         pageInBackground = true;
-
-        // Attempt the requested mute-then-unmute sequence.
-        backgroundSoundCycle();
-
+        // Mute or pause heavy streams in the background to save CPU/battery
+        players.forEach(p => {
+            if (p && typeof p.mute === "function") p.mute();
+        });
     } else {
         pageInBackground = false;
-
         if (manuallyPaused) return;
 
-        // Recover players when returning to the page.
         players.forEach(p => {
             if (!p) return;
-
-            const state = p.getPlayerState();
-
-            if (state === YT.PlayerState.PAUSED ||
-                state === YT.PlayerState.ENDED) {
+            const state = p.getPlayerState ? p.getPlayerState() : null;
+            if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED) {
                 p.playVideo();
             }
-
-            if (soundRequested) {
+            if (soundRequested && typeof p.unMute === "function") {
                 p.unMute();
                 p.setVolume(100);
             }
@@ -162,13 +120,12 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-/* Retry recovery while the page is active. */
+/* Periodic recovery interval */
 setInterval(() => {
     if (document.hidden || manuallyPaused) return;
 
     players.forEach(p => {
-        if (!p) return;
-
+        if (!p || typeof p.getPlayerState !== "function") return;
         if (p.getPlayerState() === YT.PlayerState.ENDED) {
             p.seekTo(0);
             p.playVideo();
