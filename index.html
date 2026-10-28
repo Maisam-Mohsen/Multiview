@@ -1,135 +1,151 @@
-<script>
-const videoIds = [
-    "aLBmwItG1O0",
-    "OI-i0uqjQi4",
-    "lwOQn36TeiA",
-    "A0fVc5kOmCs",
-    "f11BI1x6ezg",
-    "0hYlbJFgpGE",
-    "1kQtNpZbTO0"
-];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-YouTube Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        /* CRITICAL: Iframes require explicit dimensions to render and play */
+        .player-container {
+            width: 100%;
+            max-width: 560px;
+            height: 315px;
+            margin: 15px auto;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #ff0000;
+            color: #white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #cc0000;
+        }
+    </style>
+</head>
+<body>
 
-const players = [];
-let pageInBackground = false;
-let soundRequested = false;
-let manuallyPaused = false;
+    <h1>Multi-YouTube Player Dashboard</h1>
+    
+    <!-- User Gesture Control (Required by browsers to enable sound) -->
+    <div class="controls">
+        <button onclick="masterAction('unmute')">🔊 Enable Sound & Play All</button>
+        <button onclick="masterAction('pause')">⏸ Pause All</button>
+    </div>
 
-/* Load YouTube API asynchronously */
-if (!window.YT) {
+    <!-- Required DOM Containers -->
+    <div id="iframe-0" class="player-container"></div>
+    <div id="iframe-1" class="player-container"></div>
+    <div id="iframe-2" class="player-container"></div>
+    <div id="iframe-3" class="player-container"></div>
+    <div id="iframe-4" class="player-container"></div>
+    <div id="iframe-5" class="player-container"></div>
+    <div id="iframe-6" class="player-container"></div>
+
+    <script>
+    const videoIds = [
+        "aLBmwItG1O0",
+        "OI-i0uqjQi4",
+        "lwOQn36TeiA",
+        "A0fVc5kOmCs",
+        "f11BI1x6ezg",
+        "0hYlbJFgpGE",
+        "1kQtNpZbTO0"
+    ];
+
+    const players = [];
+    let manuallyPaused = false;
+    let soundRequested = false;
+
+    // Safely inject YouTube IFrame API script
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-}
+    const firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-window.onYouTubeIframeAPIReady = function () {
-    videoIds.forEach((id, index) => {
-        players[index] = new YT.Player("iframe-" + index, {
-            videoId: id,
-            playerVars: {
-                autoplay: 1,
-                mute: 1,             // CRITICAL: Must be specified here for browser autoplay compliance
-                controls: 1,
-                playsinline: 1,
-                loop: 1,
-                playlist: id,        // Required for single-video looping
-                rel: 0,
-                enablejsapi: 1
-            },
-            events: {
-                onReady: function (event) {
-                    const p = event.target;
-                    p.setVolume(100);
-                    
-                    // Safely set playback rate if supported by the stream
-                    try {
-                        p.setPlaybackRate(0.25);
-                    } catch (e) {
-                        console.warn("Playback rate adjustment not supported for video:", id);
-                    }
+    // Global callback required by YouTube API
+    window.onYouTubeIframeAPIReady = function () {
+        if (!window.YT || !window.YT.Player) {
+            console.error("YouTube API failed to load. Check your adblocker or network.");
+            return;
+        }
 
-                    if (!manuallyPaused) {
-                        p.playVideo();
-                    }
+        videoIds.forEach((id, index) => {
+            players[index] = new YT.Player("iframe-" + index, {
+                videoId: id,
+                playerVars: {
+                    autoplay: 1,
+                    mute: 1,             // Mandatory for browser autoplay policies
+                    controls: 1,
+                    playsinline: 1,
+                    loop: 1,
+                    playlist: id,        // Required for single-video looping
+                    rel: 0,
+                    enablejsapi: 1
                 },
+                events: {
+                    onReady: function (event) {
+                        const p = event.target;
+                        p.setVolume(100);
 
-                onStateChange: function (event) {
-                    // Handle loop recovery if ended
-                    if (event.data === YT.PlayerState.ENDED) {
-                        event.target.seekTo(0);
-                        event.target.playVideo();
+                        try {
+                            p.setPlaybackRate(0.25); // Set slow motion if supported
+                        } catch (e) {
+                            console.warn("Playback rate adjustment skipped for video:", id);
+                        }
+
+                        if (!manuallyPaused) {
+                            p.playVideo();
+                        }
+                    },
+                    onError: function (event) {
+                        console.error(`YouTube Error on player ${index} (ID: ${id}), Error Code: ${event.data}`);
+                    },
+                    onStateChange: function (event) {
+                        if (event.data === YT.PlayerState.ENDED) {
+                            event.target.seekTo(0);
+                            event.target.playVideo();
+                        }
                     }
                 }
-            }
+            });
         });
-    });
-};
+    };
 
-/* Professional user-gesture handler */
-function masterAction(action) {
-    if (action === "play") {
-        manuallyPaused = false;
-        players.forEach(p => { if (p && typeof p.playVideo === "function") p.playVideo(); });
-    }
-
-    if (action === "pause") {
-        manuallyPaused = true;
-        players.forEach(p => { if (p && typeof p.pauseVideo === "function") p.pauseVideo(); });
-    }
-
-    if (action === "mute") {
-        players.forEach(p => { if (p && typeof p.mute === "function") p.mute(); });
-    }
-
-    if (action === "unmute") {
-        soundRequested = true;
-        manuallyPaused = false;
-
-        // Browsers permit unmuting ONLY inside an explicit user click handler
-        players.forEach(p => {
-            if (!p || typeof p.unMute !== "function") return;
-            p.unMute();
-            p.setVolume(100);
-            p.playVideo();
-        });
-    }
-}
-
-/* Page Visibility Handling */
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-        pageInBackground = true;
-        // Mute or pause heavy streams in the background to save CPU/battery
-        players.forEach(p => {
-            if (p && typeof p.mute === "function") p.mute();
-        });
-    } else {
-        pageInBackground = false;
-        if (manuallyPaused) return;
-
-        players.forEach(p => {
-            if (!p) return;
-            const state = p.getPlayerState ? p.getPlayerState() : null;
-            if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED) {
-                p.playVideo();
-            }
-            if (soundRequested && typeof p.unMute === "function") {
-                p.unMute();
-                p.setVolume(100);
-            }
-        });
-    }
-});
-
-/* Periodic recovery interval */
-setInterval(() => {
-    if (document.hidden || manuallyPaused) return;
-
-    players.forEach(p => {
-        if (!p || typeof p.getPlayerState !== "function") return;
-        if (p.getPlayerState() === YT.PlayerState.ENDED) {
-            p.seekTo(0);
-            p.playVideo();
+    function masterAction(action) {
+        if (action === "pause") {
+            manuallyPaused = true;
+            players.forEach(p => { if (p && typeof p.pauseVideo === "function") p.pauseVideo(); });
+        } 
+        else if (action === "unmute") {
+            soundRequested = true;
+            manuallyPaused = false;
+            players.forEach(p => {
+                if (p && typeof p.unMute === "function") {
+                    p.unMute();
+                    p.setVolume(100);
+                    p.playVideo();
+                }
+            });
         }
-    });
-}, 5000);
-</script>
+    }
+    </script>
+</body>
+</html>
