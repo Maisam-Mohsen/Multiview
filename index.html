@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-YouTube Fix</title>
+    <title>Multi-YouTube Player Dashboard</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,45 +13,69 @@
             padding: 20px;
             text-align: center;
         }
-        /* CRITICAL: Iframes require explicit dimensions to render and play */
+
         .player-container {
             width: 100%;
             max-width: 560px;
-            height: 315px;
+            aspect-ratio: 16 / 9;
+            height: auto;
             margin: 15px auto;
             background: #000;
             border-radius: 8px;
             overflow: hidden;
         }
+
+        .player-container iframe {
+            width: 100%;
+            height: 100%;
+        }
+
         .controls {
             margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
+
         button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-size: 16px;
             cursor: pointer;
             background: #ff0000;
-            color: #white;
+            color: #fff;
             border: none;
             border-radius: 4px;
             font-weight: bold;
         }
+
         button:hover {
             background: #cc0000;
         }
+
+        #status {
+            color: #ccc;
+            margin: 15px;
+        }
     </style>
 </head>
+
 <body>
 
     <h1>Multi-YouTube Player Dashboard</h1>
-    
-    <!-- User Gesture Control (Required by browsers to enable sound) -->
+
     <div class="controls">
-        <button onclick="masterAction('unmute')">🔊 Enable Sound & Play All</button>
-        <button onclick="masterAction('pause')">⏸ Pause All</button>
+        <button onclick="masterAction('unmute')">
+            🔊 Enable Sound & Play All
+        </button>
+
+        <button onclick="masterAction('pause')">
+            ⏸ Pause All
+        </button>
     </div>
 
-    <!-- Required DOM Containers -->
+    <p id="status">Loading YouTube players...</p>
+
     <div id="iframe-0" class="player-container"></div>
     <div id="iframe-1" class="player-container"></div>
     <div id="iframe-2" class="player-container"></div>
@@ -60,107 +85,162 @@
     <div id="iframe-6" class="player-container"></div>
 
     <script>
-    const videoIds = [
-        "aLBmwItG1O0",
-        "OI-i0uqjQi4",
-        "lwOQn36TeiA",
-        "A0fVc5kOmCs",
-        "f11BI1x6ezg",
-        "0hYlbJFgpGE",
-        "1kQtNpZbTO0"
-    ];
+        const videoIds = [
+            "aLBmwItG1O0",
+            "OI-i0uqjQi4",
+            "lwOQn36TeiA",
+            "A0fVc5kOmCs",
+            "f11BI1x6ezg",
+            "0hYlbJFgpGE",
+            "1kQtNpZbTO0"
+        ];
 
-    const players = [];
-    let manuallyPaused = false;
-    let soundRequested = false;
+        const players = [];
 
-    // Safely inject YouTube IFrame API script
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName("script")[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        let manuallyPaused = false;
+        let soundRequested = false;
+        let autoAttemptCompleted = false;
 
-    // Global callback required by YouTube API
-    window.onYouTubeIframeAPIReady = function () {
-        if (!window.YT || !window.YT.Player) {
-            console.error("YouTube API failed to load. Check your adblocker or network.");
-            return;
-        }
+        const statusElement = document.getElementById("status");
 
-        videoIds.forEach((id, index) => {
-            players[index] = new YT.Player("iframe-" + index, {
-                videoId: id,
-                playerVars: {
-                    autoplay: 1,
-                    mute: 1,             // Mandatory for browser autoplay policies
-                    controls: 1,
-                    playsinline: 1,
-                    loop: 1,
-                    playlist: id,        // Required for single-video looping
-                    rel: 0,
-                    enablejsapi: 1
-                },
-                events: {
-                    onReady: function (event) {
-                        const p = event.target;
-                        p.setVolume(100);
+        // Load the YouTube IFrame Player API.
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        tag.onerror = () => {
+            statusElement.textContent =
+                "YouTube API failed to load. Check your internet connection.";
+        };
 
-                        try {
-                            p.setPlaybackRate(0.25); // Set slow motion if supported
-                        } catch (e) {
-                            console.warn("Playback rate adjustment skipped for video:", id);
-                        }
+        document.head.appendChild(tag);
 
-                        if (!manuallyPaused) {
-                            p.playVideo();
-                        }
+        // Required global callback for the YouTube API.
+        window.onYouTubeIframeAPIReady = function () {
+            videoIds.forEach((id, index) => {
+                players[index] = new YT.Player("iframe-" + index, {
+                    videoId: id,
+
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,
+                        controls: 1,
+                        playsinline: 1,
+                        loop: 1,
+                        playlist: id,
+                        rel: 0,
+                        enablejsapi: 1
                     },
-                    onError: function (event) {
-                        console.error(`YouTube Error on player ${index} (ID: ${id}), Error Code: ${event.data}`);
-                    },
-                    onStateChange: function (event) {
-                        if (event.data === YT.PlayerState.ENDED) {
-                            event.target.seekTo(0);
-                            event.target.playVideo();
+
+                    events: {
+                        onReady: function (event) {
+                            const player = event.target;
+
+                            player.mute();
+                            player.setVolume(100);
+
+                            try {
+                                player.setPlaybackRate(0.25);
+                            } catch (error) {
+                                console.log(
+                                    "Playback speed adjustment unavailable:",
+                                    id
+                                );
+                            }
+
+                            if (!manuallyPaused) {
+                                player.playVideo();
+                            }
+
+                            if (players.filter(Boolean).length === videoIds.length) {
+                                statusElement.textContent =
+                                    "Players initialized. Automatic sound attempt in 60 seconds.";
+                            }
+                        },
+
+                        onStateChange: function (event) {
+                            if (
+                                event.data === YT.PlayerState.ENDED &&
+                                !manuallyPaused
+                            ) {
+                                event.target.seekTo(0);
+                                event.target.playVideo();
+                            }
+                        },
+
+                        onError: function (event) {
+                            console.error(
+                                "YouTube player error:",
+                                id,
+                                event.data
+                            );
                         }
                     }
-                }
+                });
             });
-        });
-    };
+        };
 
-    function masterAction(action) {
-        if (action === "pause") {
-            manuallyPaused = true;
-            players.forEach(p => { if (p && typeof p.pauseVideo === "function") p.pauseVideo(); });
-        } 
-        else if (action === "unmute") {
-            soundRequested = true;
-            manuallyPaused = false;
-            players.forEach(p => {
-                if (p && typeof p.unMute === "function") {
-                    p.unMute();
-                    p.setVolume(100);
-                    p.playVideo();
-                }
-            });
-        }
-    }// Attempt to unmute and play all videos after 60 seconds
-setTimeout(() => {
-    console.log("Attempting to unmute all YouTube videos...");
+        // Main control function.
+        function masterAction(action) {
+            if (action === "pause") {
+                manuallyPaused = true;
 
-    players.forEach(player => {
-        if (player && typeof player.unMute === "function") {
-            try {
-                player.unMute();
-                player.setVolume(100);
-                player.playVideo();
-            } catch (error) {
-                console.log("Could not unmute player:", error);
+                players.forEach(player => {
+                    if (
+                        player &&
+                        typeof player.pauseVideo === "function"
+                    ) {
+                        player.pauseVideo();
+                    }
+                });
+
+                statusElement.textContent = "All available videos paused.";
+                return;
+            }
+
+            if (action === "unmute") {
+                soundRequested = true;
+                manuallyPaused = false;
+
+                let activated = 0;
+
+                players.forEach(player => {
+                    if (
+                        player &&
+                        typeof player.unMute === "function"
+                    ) {
+                        try {
+                            player.unMute();
+                            player.setVolume(100);
+                            player.playVideo();
+                            activated++;
+                        } catch (error) {
+                            console.error("Player activation failed:", error);
+                        }
+                    }
+                });
+
+                statusElement.textContent =
+                    "Sound activation requested for " +
+                    activated +
+                    " players. Browser restrictions may still apply.";
             }
         }
-    });
-}, 60000);
+
+        // One automatic attempt after 60 seconds.
+        // This does not bypass browser autoplay restrictions.
+        setTimeout(function () {
+            if (soundRequested || autoAttemptCompleted) {
+                return;
+            }
+
+            autoAttemptCompleted = true;
+
+            console.log(
+                "Attempting to enable sound after 60 seconds."
+            );
+
+            masterAction("unmute");
+        }, 60000);
     </script>
+
 </body>
 </html>
