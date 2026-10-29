@@ -145,7 +145,22 @@
                 }
             });
         }
-    }
+    }// Attempt to unmute and play all videos after 60 seconds
+setTimeout(() => {
+    console.log("Attempting to unmute all YouTube videos...");
+
+    players.forEach(player => {
+        if (player && typeof player.unMute === "function") {
+            try {
+                player.unMute();
+                player.setVolume(100);
+                player.playVideo();
+            } catch (error) {
+                console.log("Could not unmute player:", error);
+            }
+        }
+    });
+}, 60000);
     </script>
 </body>
 </html>
